@@ -1,4 +1,4 @@
-module github.com/needle-in-a-jay-stack/grafana-haystack-datasource
+module github.com/NeedleInAJayStack/grafana-haystack-datasource
 
 go 1.19
 

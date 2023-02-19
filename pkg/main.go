@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
+	"github.com/NeedleInAJayStack/grafana-haystack-datasource/pkg/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/needle-in-a-jay-stack/grafana-haystack-datasource/pkg/plugin"
 )
 
 func main() {
