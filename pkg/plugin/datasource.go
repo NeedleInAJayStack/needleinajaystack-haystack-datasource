@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/NeedleInAJayStack/haystack"
@@ -26,13 +25,40 @@ var (
 )
 
 // NewDatasource creates a new datasource instance.
-func NewDatasource(_ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	return &Datasource{}, nil
+func NewDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	log.DefaultLogger.Debug("NewDatasource called")
+
+	// settings contains normal inputs in the .JSONData field in JSON byte form
+	var options Options
+	jsonErr := json.Unmarshal(settings.JSONData, &options)
+	if jsonErr != nil {
+		return nil, jsonErr
+	}
+	url := options.Url
+	username := options.Username
+
+	// settings contains secure inputs in .DecryptedSecureJSONData in a string:string map
+	password := settings.DecryptedSecureJSONData["password"]
+
+	client := haystack.NewClient(url, username, password)
+	openErr := client.Open()
+	if openErr != nil {
+		return nil, openErr
+	}
+	datasource := Datasource{client: client}
+	return &datasource, nil
 }
 
 // Datasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
-type Datasource struct{}
+type Datasource struct {
+	client *haystack.Client
+}
+
+type Options struct {
+	Url      string `json:"url"`
+	Username string `json:"username"`
+}
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
 // created. As soon as datasource settings change detected by SDK old datasource instance will
@@ -70,17 +96,12 @@ type queryModel struct{}
 func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	var response backend.DataResponse
 
-	client := haystack.NewClient("http://host.docker.internal:8080/api/", "su", "5gXYG16s9gDLlyS2gNko")
-	openErr := client.Open()
-	if openErr != nil {
-		log.DefaultLogger.Error(openErr.Error())
-	}
-	about, aboutErr := client.About()
-	if aboutErr != nil {
-		log.DefaultLogger.Error(aboutErr.Error())
-	} else {
-		log.DefaultLogger.Info(about.ToZinc())
-	}
+	// about, aboutErr := d.client.About()
+	// if aboutErr != nil {
+	// 	log.DefaultLogger.Error(aboutErr.Error())
+	// } else {
+	// 	log.DefaultLogger.Info(about.ToZinc())
+	// }
 
 	// Unmarshal the JSON into our queryModel.
 	var qm queryModel
@@ -116,16 +137,16 @@ func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequ
 	// (like the *backend.QueryDataRequest)
 	log.DefaultLogger.Debug("CheckHealth called")
 
-	var status = backend.HealthStatusOk
-	var message = "Data source is working"
-
-	if rand.Int()%2 == 0 {
-		status = backend.HealthStatusError
-		message = "randomized error"
+	_, err := d.client.About()
+	if err != nil {
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: "Uh oh, something's wrong with the connection",
+		}, err
 	}
 
 	return &backend.CheckHealthResult{
-		Status:  status,
-		Message: message,
+		Status:  backend.HealthStatusOk,
+		Message: "Data source is working",
 	}, nil
 }

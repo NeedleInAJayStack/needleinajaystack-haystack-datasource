@@ -7,34 +7,42 @@ interface Props extends DataSourcePluginOptionsEditorProps<MyDataSourceOptions> 
 
 export function ConfigEditor(props: Props) {
   const { onOptionsChange, options } = props;
-  const onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
     const jsonData = {
       ...options.jsonData,
-      path: event.target.value,
+      url: event.target.value,
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
+  const onUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const jsonData = {
+      ...options.jsonData,
+      username: event.target.value,
     };
     onOptionsChange({ ...options, jsonData });
   };
 
   // Secure field (only sent to the backend)
-  const onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onPasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       secureJsonData: {
-        apiKey: event.target.value,
+        password: event.target.value,
       },
     });
   };
 
-  const onResetAPIKey = () => {
+  const onResetPassword = () => {
     onOptionsChange({
       ...options,
       secureJsonFields: {
         ...options.secureJsonFields,
-        apiKey: false,
+        password: false,
       },
       secureJsonData: {
         ...options.secureJsonData,
-        apiKey: '',
+        password: '',
       },
     });
   };
@@ -44,22 +52,30 @@ export function ConfigEditor(props: Props) {
 
   return (
     <div className="gf-form-group">
-      <InlineField label="Path" labelWidth={12}>
+      <InlineField label="URL" labelWidth={12}>
         <Input
-          onChange={onPathChange}
-          value={jsonData.path || ''}
-          placeholder="json field returned to frontend"
-          width={40}
+          onChange={onUrlChange}
+          value={jsonData.url || ''}
+          placeholder="e.g. http://mywebsite.com/api/"
+          width={60}
         />
       </InlineField>
-      <InlineField label="API Key" labelWidth={12}>
+      <InlineField label="Username" labelWidth={12}>
+        <Input
+          onChange={onUsernameChange}
+          value={jsonData.username || ''}
+          placeholder="It's a good idea to create a user specifically for this connection"
+          width={60}
+        />
+      </InlineField>
+      <InlineField label="Password" labelWidth={12}>
         <SecretInput
-          isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
-          value={secureJsonData.apiKey || ''}
-          placeholder="secure json field (backend only)"
-          width={40}
-          onReset={onResetAPIKey}
-          onChange={onAPIKeyChange}
+          isConfigured={(secureJsonFields && secureJsonFields.password) as boolean}
+          value={secureJsonData.password || ''}
+          placeholder=""
+          width={60}
+          onReset={onResetPassword}
+          onChange={onPasswordChange}
         />
       </InlineField>
     </div>
