@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/NeedleInAJayStack/haystack"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -68,6 +69,18 @@ type queryModel struct{}
 
 func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	var response backend.DataResponse
+
+	client := haystack.NewClient("http://host.docker.internal:8080/api/", "su", "5gXYG16s9gDLlyS2gNko")
+	openErr := client.Open()
+	if openErr != nil {
+		log.DefaultLogger.Error(openErr.Error())
+	}
+	about, aboutErr := client.About()
+	if aboutErr != nil {
+		log.DefaultLogger.Error(aboutErr.Error())
+	} else {
+		log.DefaultLogger.Info(about.ToZinc())
+	}
 
 	// Unmarshal the JSON into our queryModel.
 	var qm queryModel
