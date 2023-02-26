@@ -2,7 +2,7 @@ version: '3.0'
 
 services:
   grafana:
-    container_name: 'needleinajaystack-grafanahaystack-datasource'
+    container_name: 'needleinajaystack-haystack-datasource'
     build:
       context: ./.config
       args:
@@ -10,5 +10,5 @@ services:
     ports:
       - 3000:3000/tcp
     volumes:
-      - ./dist:/var/lib/grafana/plugins/needleinajaystack-grafanahaystack-datasource
+      - ./dist:/var/lib/grafana/plugins/needleinajaystack-haystack-datasource
       - ./provisioning:/etc/grafana/provisioning

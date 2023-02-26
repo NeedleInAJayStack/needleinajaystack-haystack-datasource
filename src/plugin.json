@@ -1,20 +1,20 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "Grafana Haystack Datasource",
-  "id": "needleinajaystack-grafanahaystack-datasource",
+  "name": "Haystack",
+  "id": "needleinajaystack-haystack-datasource",
   "metrics": true,
   "backend": true,
-  "executable": "gpx_grafana_haystack_datasource",
+  "executable": "gpx_haystack_datasource",
   "info": {
-    "description": "A data source for haystack tagged data",
+    "description": "A Grafana data source for Haystack tagged data",
     "author": {
-      "name": "Needle in a jay stack"
+      "name": "NeedleInAJayStack"
     },
     "keywords": ["datasource"],
     "logos": {
-      "small": "img/logo.svg",
-      "large": "img/logo.svg"
+      "small": "img/project-haystack-logo.png",
+      "large": "img/project-haystack-logo.png"
     },
     "links": [],
     "screenshots": [],

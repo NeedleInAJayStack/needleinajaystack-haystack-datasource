@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/NeedleInAJayStack/grafana-haystack-datasource/pkg/plugin"
+	"github.com/NeedleInAJayStack/haystack-datasource/pkg/plugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
@@ -17,7 +17,7 @@ func main() {
 	// from Grafana to create different instances of SampleDatasource (per datasource
 	// ID). When datasource configuration changed Dispose method will be called and
 	// new datasource instance created using NewSampleDatasource factory.
-	if err := datasource.Manage("needleinajaystack-grafanahaystack-datasource", plugin.NewDatasource, datasource.ManageOpts{}); err != nil {
+	if err := datasource.Manage("needleinajaystack-haystack-datasource", plugin.NewDatasource, datasource.ManageOpts{}); err != nil {
 		log.DefaultLogger.Error(err.Error())
 		os.Exit(1)
 	}
