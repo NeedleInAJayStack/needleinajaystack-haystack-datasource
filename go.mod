@@ -4,7 +4,7 @@ go 1.19
 
 require github.com/grafana/grafana-plugin-sdk-go v0.149.1
 
-require github.com/NeedleInAJayStack/haystack v0.0.3
+require github.com/NeedleInAJayStack/haystack v0.0.4
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect

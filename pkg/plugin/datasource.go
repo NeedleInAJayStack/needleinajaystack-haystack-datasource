@@ -40,6 +40,7 @@ func NewDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 	// settings contains secure inputs in .DecryptedSecureJSONData in a string:string map
 	password := settings.DecryptedSecureJSONData["password"]
 
+	// client := haystack.NewClient("http://host.docker.internal:8080/api/", "su", "5gXYG16s9gDLlyS2gNko")
 	client := haystack.NewClient(url, username, password)
 	openErr := client.Open()
 	if openErr != nil {
@@ -91,24 +92,61 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	return response, nil
 }
 
-type queryModel struct{}
+type queryModel struct {
+	Expr string `json:"expr"`
+}
 
 func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	var response backend.DataResponse
+	// test query: [{ts: now()-1hr, v0: 0}, {ts: now(), v0: 23}].toGrid()
 
-	// about, aboutErr := d.client.About()
-	// if aboutErr != nil {
-	// 	log.DefaultLogger.Error(aboutErr.Error())
-	// } else {
-	// 	log.DefaultLogger.Info(about.ToZinc())
-	// }
+	var response backend.DataResponse
 
 	// Unmarshal the JSON into our queryModel.
 	var qm queryModel
 
-	err := json.Unmarshal(query.JSON, &qm)
-	if err != nil {
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal: %v", err.Error()))
+	jsonErr := json.Unmarshal(query.JSON, &qm)
+	if jsonErr != nil {
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal: %v", jsonErr.Error()))
+	}
+
+	eval, evalErr := d.client.Eval(qm.Expr)
+	if evalErr != nil {
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", evalErr.Error()))
+	}
+
+	times := []time.Time{}
+	vals := []*float64{}
+
+	rowCount := eval.RowCount()
+	colCount := eval.ColCount()
+	if colCount > 2 { // TODO: Support multiple histories
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", evalErr.Error()))
+	}
+	for rowIndex := 0; rowIndex < rowCount; rowIndex++ {
+		row := eval.RowAt(rowIndex)
+
+		for colIndex := 0; colIndex < colCount; colIndex++ {
+			col := eval.ColAt(colIndex)
+			val := row.Get(col.Name())
+			if col.Name() == "ts" {
+				switch val := val.(type) {
+				case *haystack.DateTime:
+					times = append(times, val.ToGo())
+				default:
+					return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("'ts' value found on row %d is not DateTime", rowIndex))
+				}
+			} else {
+				switch val := val.(type) {
+				case *haystack.Number:
+					float := val.Float()
+					vals = append(vals, &float)
+				case *haystack.Null:
+					vals = append(vals, nil)
+				default:
+					return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("'%s' value found on row %d is not Number?", col.Name(), rowIndex))
+				}
+			}
+		}
 	}
 
 	// create data frame response.
@@ -118,8 +156,8 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 
 	// add fields.
 	frame.Fields = append(frame.Fields,
-		data.NewField("time", nil, []time.Time{query.TimeRange.From, query.TimeRange.To}),
-		data.NewField("values", nil, []int64{10, 20}),
+		data.NewField("time", nil, times),
+		data.NewField("values", nil, vals),
 	)
 
 	// add the frames to the response.
