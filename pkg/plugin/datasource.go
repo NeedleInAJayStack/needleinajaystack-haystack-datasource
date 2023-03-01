@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NeedleInAJayStack/haystack"
+	"github.com/NeedleInAJayStack/haystack/client"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -41,7 +42,7 @@ func NewDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 	password := settings.DecryptedSecureJSONData["password"]
 
 	// client := haystack.NewClient("http://host.docker.internal:8080/api/", "su", "5gXYG16s9gDLlyS2gNko")
-	client := haystack.NewClient(url, username, password)
+	client := client.NewClient(url, username, password)
 	openErr := client.Open()
 	if openErr != nil {
 		return nil, openErr
@@ -53,7 +54,7 @@ func NewDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 // Datasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
 type Datasource struct {
-	client *haystack.Client
+	client *client.Client
 }
 
 type Options struct {
@@ -96,8 +97,8 @@ type queryModel struct {
 	Expr string `json:"expr"`
 }
 
-func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	// test query: [{ts: now()-1hr, v0: 0}, {ts: now(), v0: 23}].toGrid()
+func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+	log.DefaultLogger.Error("Context:", ctx)
 
 	var response backend.DataResponse
 
@@ -106,59 +107,21 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 
 	jsonErr := json.Unmarshal(query.JSON, &qm)
 	if jsonErr != nil {
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal: %v", jsonErr.Error()))
+		log.DefaultLogger.Error(jsonErr.Error())
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal failure: %v", jsonErr.Error()))
 	}
 
 	eval, evalErr := d.client.Eval(qm.Expr)
 	if evalErr != nil {
+		log.DefaultLogger.Error(evalErr.Error())
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", evalErr.Error()))
 	}
 
-	times := []time.Time{}
-	vals := []*float64{}
-
-	rowCount := eval.RowCount()
-	colCount := eval.ColCount()
-	if colCount > 2 { // TODO: Support multiple histories
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", evalErr.Error()))
+	frame, frameErr := dataFrameFromGrid(eval)
+	if frameErr != nil {
+		log.DefaultLogger.Error(frameErr.Error())
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Frame conversion failure: %v", frameErr.Error()))
 	}
-	for rowIndex := 0; rowIndex < rowCount; rowIndex++ {
-		row := eval.RowAt(rowIndex)
-
-		for colIndex := 0; colIndex < colCount; colIndex++ {
-			col := eval.ColAt(colIndex)
-			val := row.Get(col.Name())
-			if col.Name() == "ts" {
-				switch val := val.(type) {
-				case *haystack.DateTime:
-					times = append(times, val.ToGo())
-				default:
-					return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("'ts' value found on row %d is not DateTime", rowIndex))
-				}
-			} else {
-				switch val := val.(type) {
-				case *haystack.Number:
-					float := val.Float()
-					vals = append(vals, &float)
-				case *haystack.Null:
-					vals = append(vals, nil)
-				default:
-					return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("'%s' value found on row %d is not Number?", col.Name(), rowIndex))
-				}
-			}
-		}
-	}
-
-	// create data frame response.
-	// For an overview on data frames and how grafana handles them:
-	// https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/
-	frame := data.NewFrame("response")
-
-	// add fields.
-	frame.Fields = append(frame.Fields,
-		data.NewField("time", nil, times),
-		data.NewField("values", nil, vals),
-	)
 
 	// add the frames to the response.
 	response.Frames = append(response.Frames, frame)
@@ -188,3 +151,136 @@ func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequ
 		Message: "Data source is working",
 	}, nil
 }
+
+func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
+	fields := []*data.Field{}
+
+	for _, col := range grid.Cols() {
+		columnType := none
+		for _, row := range grid.Rows() {
+			val := row.Get(col.Name())
+			switch val.(type) {
+			case haystack.Null:
+				continue
+			case haystack.DateTime, haystack.Date:
+				if columnType == none || columnType == dateTime {
+					columnType = dateTime
+				} else {
+					columnType = mixed
+				}
+			case haystack.Number:
+				if columnType == none || columnType == number {
+					columnType = number
+				} else {
+					columnType = mixed
+				}
+			case haystack.Bool:
+				if columnType == none || columnType == boolean {
+					columnType = boolean
+				} else {
+					columnType = mixed
+				}
+			default:
+				if columnType == none || columnType == str {
+					columnType = str
+				} else {
+					columnType = mixed
+				}
+			}
+		}
+
+		var field *data.Field
+		if columnType == dateTime {
+			values := []*time.Time{}
+			for _, row := range grid.Rows() {
+				val := row.Get(col.Name())
+				switch val := val.(type) {
+				case haystack.DateTime:
+					value := val.ToGo()
+					values = append(values, &value)
+				case haystack.Date:
+					value := time.Date(val.Year(), time.Month(val.Month()), val.Day(), 0, 0, 0, 0, time.Local)
+					values = append(values, &value)
+				default:
+					values = append(values, nil)
+				}
+			}
+			field = data.NewField(col.Name(), nil, values)
+		} else if columnType == number {
+			values := []*float64{}
+			for _, row := range grid.Rows() {
+				val := row.Get(col.Name())
+				switch val := val.(type) {
+				case haystack.Number:
+					value := val.Float()
+					values = append(values, &value)
+				default:
+					values = append(values, nil)
+				}
+			}
+			field = data.NewField(col.Name(), nil, values)
+		} else if columnType == boolean {
+			values := []*bool{}
+			for _, row := range grid.Rows() {
+				val := row.Get(col.Name())
+				switch val := val.(type) {
+				case haystack.Bool:
+					value := val.ToBool()
+					values = append(values, &value)
+				default:
+					values = append(values, nil)
+				}
+			}
+			field = data.NewField(col.Name(), nil, values)
+		} else {
+			values := []*string{}
+			for _, row := range grid.Rows() {
+				val := row.Get(col.Name())
+				switch val := val.(type) {
+				case haystack.Str:
+					value := val.String()
+					values = append(values, &value)
+				default:
+					value := val.ToZinc()
+					values = append(values, &value)
+				}
+			}
+			field = data.NewField(col.Name(), nil, values)
+		}
+
+		// TODO: For some reason setting the config below causes failures...
+
+		// field.Config.DisplayName = col.Name()
+		// switch unit := col.Meta().Get("unit").(type) {
+		// case haystack.Str:
+		// 	field.Config.Unit = unit.String()
+		// default:
+		// 	field.Config.Unit = ""
+		// }
+		// log.DefaultLogger.Error("Field named to %s", field.Config.Unit)
+
+		fields = append(fields, field)
+	}
+
+	frame := data.NewFrame("response", fields...)
+
+	switch dis := grid.Meta().Get("dis").(type) {
+	case haystack.Str:
+		frame.Name = dis.String()
+	default:
+		frame.Name = ""
+	}
+
+	return frame, nil
+}
+
+type colType int
+
+const (
+	none colType = iota
+	dateTime
+	number
+	str
+	boolean
+	mixed
+)
