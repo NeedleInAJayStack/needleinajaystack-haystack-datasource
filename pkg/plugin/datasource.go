@@ -65,7 +65,7 @@ type Options struct {
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
 // created. As soon as datasource settings change detected by SDK old datasource instance will
 // be disposed and a new one will be created using NewSampleDatasource factory function.
-func (d *Datasource) Dispose() {
+func (datasource *Datasource) Dispose() {
 	// Clean up datasource instance resources.
 }
 
@@ -73,7 +73,7 @@ func (d *Datasource) Dispose() {
 // req contains the queries []DataQuery (where each query contains RefID as a unique identifier).
 // The QueryDataResponse contains a map of RefID to the response for each query, and each response
 // contains Frames ([]*Frame).
-func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (datasource *Datasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	// when logging at a non-Debug level, make sure you don't include sensitive information in the message
 	// (like the *backend.QueryDataRequest)
 	log.DefaultLogger.Debug("QueryData called", "numQueries", len(req.Queries))
@@ -82,12 +82,12 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	response := backend.NewQueryDataResponse()
 
 	// loop over queries and execute them individually.
-	for _, q := range req.Queries {
-		res := d.query(ctx, req.PluginContext, q)
+	for _, query := range req.Queries {
+		queryResponse := datasource.query(ctx, req.PluginContext, query)
 
 		// save the response in a hashmap
 		// based on with RefID as identifier
-		response.Responses[q.RefID] = res
+		response.Responses[query.RefID] = queryResponse
 	}
 
 	return response, nil
@@ -97,21 +97,21 @@ type queryModel struct {
 	Expr string `json:"expr"`
 }
 
-func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	log.DefaultLogger.Error("Context:", ctx)
 
 	var response backend.DataResponse
 
 	// Unmarshal the JSON into our queryModel.
-	var qm queryModel
+	var model queryModel
 
-	jsonErr := json.Unmarshal(query.JSON, &qm)
+	jsonErr := json.Unmarshal(query.JSON, &model)
 	if jsonErr != nil {
 		log.DefaultLogger.Error(jsonErr.Error())
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal failure: %v", jsonErr.Error()))
 	}
 
-	eval, evalErr := d.client.Eval(qm.Expr)
+	eval, evalErr := datasource.client.Eval(model.Expr)
 	if evalErr != nil {
 		log.DefaultLogger.Error(evalErr.Error())
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", evalErr.Error()))
@@ -133,12 +133,12 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 // The main use case for these health checks is the test button on the
 // datasource configuration page which allows users to verify that
 // a datasource is working as expected.
-func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (datasource *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	// when logging at a non-Debug level, make sure you don't include sensitive information in the message
 	// (like the *backend.QueryDataRequest)
 	log.DefaultLogger.Debug("CheckHealth called")
 
-	_, err := d.client.About()
+	_, err := datasource.client.About()
 	if err != nil {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
