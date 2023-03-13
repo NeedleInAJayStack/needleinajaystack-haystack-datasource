@@ -125,6 +125,7 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 
 	// add the frames to the response.
 	response.Frames = append(response.Frames, frame)
+	response.Status = backend.StatusOK
 
 	return response
 }
