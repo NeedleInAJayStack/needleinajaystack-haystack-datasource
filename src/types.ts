@@ -5,7 +5,7 @@ export interface MyQuery extends DataQuery {
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
-  expr: "[{ts: now()-1hr, v0: 0}, {ts: now(), v0: 10}].toGrid",
+  expr: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
 };
 
 /**

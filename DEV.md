@@ -48,5 +48,4 @@ Alternatively, nearly every Axon query can be visualized using the table view.
 
 # TODO
 
-* [ ] Add support for interpolating Grafana settings (time range, interval, etc)
 * [ ] Add support for non-eval queries (read, hisRead, etc)
