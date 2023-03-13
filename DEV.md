@@ -49,3 +49,4 @@ Alternatively, nearly every Axon query can be visualized using the table view.
 # TODO
 
 * [ ] Add support for non-eval queries (read, hisRead, etc)
+* [ ] Improve login/logout and add auth/retry logic

@@ -2,10 +2,12 @@ import { DataQuery, DataSourceJsonData } from '@grafana/data';
 
 export interface MyQuery extends DataQuery {
   expr: string;
+  hisRead: string;
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
   expr: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
+  hisRead: "point-id"
 };
 
 /**

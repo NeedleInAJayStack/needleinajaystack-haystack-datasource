@@ -96,7 +96,8 @@ func (datasource *Datasource) QueryData(ctx context.Context, req *backend.QueryD
 }
 
 type QueryModel struct {
-	Expr string `json:"expr"`
+	Expr    string `json:"expr"`
+	HisRead string `json:"hisRead"`
 }
 
 func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
@@ -118,15 +119,27 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		"$__interval":        haystack.NewNumber(query.Interval.Minutes(), "min").ToZinc(),
 	}
 
-	expr := model.Expr
-
-	eval, evalErr := datasource.eval(expr, variables)
-	if evalErr != nil {
-		log.DefaultLogger.Error(evalErr.Error())
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", evalErr.Error()))
+	var grid haystack.Grid
+	if model.Expr != "" {
+		eval, err := datasource.eval(model.Expr, variables)
+		if err != nil {
+			log.DefaultLogger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", err.Error()))
+		}
+		grid = eval
+	} else if model.HisRead != "" {
+		hisRead, err := datasource.hisRead(model.Expr, query.TimeRange)
+		if err != nil {
+			log.DefaultLogger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisRead failure: %v", err.Error()))
+		}
+		grid = hisRead
+	} else {
+		log.DefaultLogger.Warn("No valid input, returning empty Grid")
+		grid = haystack.EmptyGrid()
 	}
 
-	frame, frameErr := dataFrameFromGrid(eval)
+	frame, frameErr := dataFrameFromGrid(grid)
 	if frameErr != nil {
 		log.DefaultLogger.Error(frameErr.Error())
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Frame conversion failure: %v", frameErr.Error()))
@@ -167,6 +180,13 @@ func (datasource *Datasource) eval(expr string, variables map[string]string) (ha
 		expr = strings.ReplaceAll(expr, name, val)
 	}
 	return datasource.client.Eval(expr)
+}
+
+func (datasource *Datasource) hisRead(id string, timeRange backend.TimeRange) (haystack.Grid, error) {
+	ref := haystack.NewRef(id, "")
+	start := haystack.NewDateTimeFromGo(timeRange.From.UTC())
+	end := haystack.NewDateTimeFromGo(timeRange.To.UTC())
+	return datasource.client.HisReadAbsDateTime(ref, start, end)
 }
 
 func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
