@@ -1,11 +1,15 @@
 import { DataQuery, DataSourceJsonData } from '@grafana/data';
 
 export interface MyQuery extends DataQuery {
-  expr: string;
+  type: string; // Defines the type of query that should be executed
+  eval: string;
+  hisRead: string;
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
-  expr: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
+  type: "Eval",
+  eval: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
+  hisRead: "abcdef-123456"
 };
 
 /**

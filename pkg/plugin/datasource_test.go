@@ -22,7 +22,8 @@ import (
 func TestQueryData_Eval(t *testing.T) {
 	data := getResponse(
 		&QueryModel{
-			Expr: "[{ts: now()-1hr, v0: 0}, {ts: now(), v0: 10}].toGrid",
+			Type: "Eval",
+			Eval: "[{ts: now()-1hr, v0: 0}, {ts: now(), v0: 10}].toGrid",
 		},
 		backend.TimeRange{},
 		t,
@@ -34,7 +35,8 @@ func TestQueryData_Eval(t *testing.T) {
 func TestQueryData_Eval_Variables(t *testing.T) {
 	data := getResponse(
 		&QueryModel{
-			Expr: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
+			Type: "Eval",
+			Eval: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
 		},
 		backend.TimeRange{
 			From: time.Now().Add(-1 * time.Hour),
