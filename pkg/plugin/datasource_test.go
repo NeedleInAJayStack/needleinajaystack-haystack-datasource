@@ -19,7 +19,7 @@ import (
 // 1. Start a Haystack server you can access
 // 1. Set up a `.env` file in the `/pkg` directory with these env vars: `TEST_URL`, `TEST_USERNAME`, `TEST_PASSWORD`
 
-func TestQueryData(t *testing.T) {
+func TestQueryData_Eval(t *testing.T) {
 	data := getResponse(
 		&QueryModel{
 			Expr: "[{ts: now()-1hr, v0: 0}, {ts: now(), v0: 10}].toGrid",
@@ -31,7 +31,7 @@ func TestQueryData(t *testing.T) {
 	fmt.Printf("frame: %v\n", table)
 }
 
-func TestQueryData_Variables(t *testing.T) {
+func TestQueryData_Eval_Variables(t *testing.T) {
 	data := getResponse(
 		&QueryModel{
 			Expr: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",

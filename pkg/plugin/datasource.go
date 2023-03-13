@@ -111,27 +111,16 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal failure: %v", jsonErr.Error()))
 	}
 
+	variables := map[string]string{
+		"$__timeRange_start": haystack.NewDateTimeFromGo(query.TimeRange.From.UTC()).ToAxon(),
+		"$__timeRange_end":   haystack.NewDateTimeFromGo(query.TimeRange.To.UTC()).ToAxon(),
+		"$__maxDataPoints":   strconv.FormatInt(query.MaxDataPoints, 10),
+		"$__interval":        haystack.NewNumber(query.Interval.Minutes(), "min").ToZinc(),
+	}
+
 	expr := model.Expr
 
-	// Replace flags with query parameters
-	startTimeFlag := "$__timeRange_start"
-	startTimeAxon := haystack.NewDateTimeFromGo(query.TimeRange.From.UTC()).ToAxon()
-	expr = strings.ReplaceAll(expr, startTimeFlag, startTimeAxon)
-
-	endTimeFlag := "$__timeRange_end"
-	endTimeAxon := haystack.NewDateTimeFromGo(query.TimeRange.To.UTC()).ToAxon()
-	expr = strings.ReplaceAll(expr, endTimeFlag, endTimeAxon)
-
-	maxDataPointsFlag := "$__maxDataPoints"
-	maxDataPointsAxon := strconv.FormatInt(query.MaxDataPoints, 10)
-	expr = strings.ReplaceAll(expr, maxDataPointsFlag, maxDataPointsAxon)
-
-	suggestedIntervalFlag := "$__interval"
-	// TODO: Improve time.Duration to Number conversion.
-	suggestedIntervalAxon := haystack.NewNumber(query.Interval.Minutes(), "min").ToZinc()
-	expr = strings.ReplaceAll(expr, suggestedIntervalFlag, suggestedIntervalAxon)
-
-	eval, evalErr := datasource.client.Eval(expr)
+	eval, evalErr := datasource.eval(expr, variables)
 	if evalErr != nil {
 		log.DefaultLogger.Error(evalErr.Error())
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", evalErr.Error()))
@@ -171,6 +160,13 @@ func (datasource *Datasource) CheckHealth(_ context.Context, req *backend.CheckH
 		Status:  backend.HealthStatusOk,
 		Message: "Data source is working",
 	}, nil
+}
+
+func (datasource *Datasource) eval(expr string, variables map[string]string) (haystack.Grid, error) {
+	for name, val := range variables {
+		expr = strings.ReplaceAll(expr, name, val)
+	}
+	return datasource.client.Eval(expr)
 }
 
 func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
