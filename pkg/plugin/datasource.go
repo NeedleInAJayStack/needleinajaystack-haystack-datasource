@@ -269,16 +269,16 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 			field = data.NewField(col.Name(), nil, values)
 		}
 
-		// TODO: For some reason setting the config below causes failures...
-
-		// field.Config.DisplayName = col.Name()
-		// switch unit := col.Meta().Get("unit").(type) {
-		// case haystack.Str:
-		// 	field.Config.Unit = unit.String()
-		// default:
-		// 	field.Config.Unit = ""
-		// }
-		// log.DefaultLogger.Error("Field named to %s", field.Config.Unit)
+		// Set Grafana field info from Haystack grid info
+		config := &data.FieldConfig{}
+		config.DisplayName = col.Name()
+		switch unit := col.Meta().Get("unit").(type) {
+		case haystack.Str:
+			config.Unit = unit.String()
+		default:
+			config.Unit = ""
+		}
+		field.Config = config
 
 		fields = append(fields, field)
 	}
