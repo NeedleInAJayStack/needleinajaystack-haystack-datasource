@@ -68,7 +68,7 @@ type Options struct {
 // created. As soon as datasource settings change detected by SDK old datasource instance will
 // be disposed and a new one will be created using NewSampleDatasource factory function.
 func (datasource *Datasource) Dispose() {
-	// Clean up datasource instance resources.
+	datasource.client.Close()
 }
 
 // QueryData handles multiple queries and returns multiple responses.
@@ -189,7 +189,19 @@ func (datasource *Datasource) eval(expr string, variables map[string]string) (ha
 	for name, val := range variables {
 		expr = strings.ReplaceAll(expr, name, val)
 	}
-	return datasource.client.Eval(expr)
+	result, err := datasource.client.Eval(expr)
+	// If the error is a 404, try to reconnect and try again
+	switch error := err.(type) {
+	case client.HTTPError:
+		if error.Code == 404 {
+			datasource.client.Open()
+			return datasource.client.Eval(expr)
+		} else {
+			return result, err
+		}
+	default:
+		return result, err
+	}
 }
 
 func (datasource *Datasource) hisRead(id string, timeRange backend.TimeRange) (haystack.Grid, error) {

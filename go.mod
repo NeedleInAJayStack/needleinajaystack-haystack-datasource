@@ -5,7 +5,7 @@ go 1.19
 require github.com/grafana/grafana-plugin-sdk-go v0.149.1
 
 require (
-	github.com/NeedleInAJayStack/haystack v0.1.5
+	github.com/NeedleInAJayStack/haystack v0.1.6
 	github.com/joho/godotenv v1.5.1
 )
 

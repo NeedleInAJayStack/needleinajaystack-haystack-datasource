@@ -51,3 +51,6 @@ To use them, simply use the value in the input string like this:
 [{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid
 ```
 
+# Continuing Work
+
+* [ ] Publish plugin
