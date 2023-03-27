@@ -99,6 +99,7 @@ type QueryModel struct {
 	Type    string `json:"type"`
 	Eval    string `json:"eval"`
 	HisRead string `json:"hisRead"`
+	Read    string `json:"read"`
 }
 
 func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
@@ -136,6 +137,13 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisRead failure: %v", err.Error()))
 		}
 		grid = hisRead
+	case "Read":
+		read, err := datasource.read(model.Read, variables)
+		if err != nil {
+			log.DefaultLogger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Read failure: %v", err.Error()))
+		}
+		grid = read
 	default:
 		log.DefaultLogger.Warn("No valid input, returning empty Grid")
 		grid = haystack.EmptyGrid()
@@ -189,6 +197,13 @@ func (datasource *Datasource) hisRead(id string, timeRange backend.TimeRange) (h
 	start := haystack.NewDateTimeFromGo(timeRange.From.UTC())
 	end := haystack.NewDateTimeFromGo(timeRange.To.UTC())
 	return datasource.client.HisReadAbsDateTime(ref, start, end)
+}
+
+func (datasource *Datasource) read(filter string, variables map[string]string) (haystack.Grid, error) {
+	for name, val := range variables {
+		filter = strings.ReplaceAll(filter, name, val)
+	}
+	return datasource.client.Read(filter)
 }
 
 func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {

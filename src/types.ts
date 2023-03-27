@@ -4,12 +4,14 @@ export interface MyQuery extends DataQuery {
   type: string; // Defines the type of query that should be executed
   eval: string;
   hisRead: string;
+  read: string;
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
   type: "Eval",
   eval: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
-  hisRead: "abcdef-123456"
+  hisRead: "abcdef-123456",
+  read: "point and temp and air and outside"
 };
 
 /**

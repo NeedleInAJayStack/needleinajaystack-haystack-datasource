@@ -17,10 +17,14 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
   const onHisReadChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ ...query, type: 'HisRead', hisRead: event.target.value });
   };
+  const onReadChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...query, type: 'Read', read: event.target.value });
+  };
 
   const queryTypes = [
     { label: 'Eval', value: 0, description: 'Evaluate an Axon expression' },
-    { label: 'HisRead', value: 1, description: 'Read the histories of a list of points' }
+    { label: 'HisRead', value: 1, description: 'Read the histories of a list of points' },
+    { label: 'Read', value: 2, description: 'Read the records matched by a filter' }
   ];
   const queryTypeDefault = queryTypes[0];
   function queryTypeFromLabel(label: string) {
@@ -58,7 +62,15 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
         return (
         <Field>
           <InlineField label="Point ID" labelWidth="auto" tooltip="The ID of the point to read">
-            <Input width={100} prefix={<Icon name="angle-right" />} onChange={onHisReadChange} value={query.hisRead} placeholder={DEFAULT_QUERY.hisRead} />
+            <Input width={100} prefix={"@"} onChange={onHisReadChange} value={query.hisRead} placeholder={DEFAULT_QUERY.hisRead} />
+          </InlineField>
+        </Field>
+        );
+      case 2: // Read
+        return (
+        <Field>
+          <InlineField label="Filter" labelWidth="auto" tooltip="A filter for the desired records">
+            <Input width={100} prefix={<Icon name="filter" />} onChange={onReadChange} value={query.read} placeholder={DEFAULT_QUERY.read} />
           </InlineField>
         </Field>
         );
