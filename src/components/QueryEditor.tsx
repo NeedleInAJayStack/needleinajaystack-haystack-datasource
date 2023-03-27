@@ -1,5 +1,5 @@
 import React, { ChangeEvent, ReactNode } from 'react';
-import { Button, Form, Icon, InlineField, Input, Select } from '@grafana/ui';
+import { Button, Field, Form, Icon, InlineField, Input, Select } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { DEFAULT_QUERY, MyDataSourceOptions, MyQuery } from '../types';
@@ -29,6 +29,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
 
   const SelectComponent = () => {
     return (
+    <Field>
       <Select
         options={queryTypes}
         value={queryTypeFromLabel(query.type)}
@@ -38,6 +39,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
           onTypeChange(queryType);
         }}
       />
+    </Field>
     );
   };
 
@@ -45,27 +47,41 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
     let queryType = queryTypeFromLabel(query.type);
     switch(queryType.value) {
       case 0: // Eval
-        return <InlineField label="Axon" labelWidth="auto" tooltip="An Axon expression to evaluate on the Haystack server">
-          <Input width={100} prefix={<Icon name="angle-right" />} onChange={onEvalChange} value={query.eval} placeholder={DEFAULT_QUERY.eval} />
-        </InlineField>
+        return (
+        <Field>
+          <InlineField label="Axon" labelWidth="auto" tooltip="An Axon expression to evaluate on the Haystack server">
+            <Input width={100} prefix={<Icon name="angle-right" />} onChange={onEvalChange} value={query.eval} placeholder={DEFAULT_QUERY.eval} />
+          </InlineField>
+        </Field>
+        );
       case 1: // HisRead
-        return <InlineField label="Point ID" labelWidth="auto" tooltip="The ID of the point to read">
-          <Input width={100} prefix={<Icon name="angle-right" />} onChange={onHisReadChange} value={query.hisRead} placeholder={DEFAULT_QUERY.hisRead} />
-        </InlineField>
+        return (
+        <Field>
+          <InlineField label="Point ID" labelWidth="auto" tooltip="The ID of the point to read">
+            <Input width={100} prefix={<Icon name="angle-right" />} onChange={onHisReadChange} value={query.hisRead} placeholder={DEFAULT_QUERY.hisRead} />
+          </InlineField>
+        </Field>
+        );
     }
     return <p>Select a query type</p>
+  }
+
+  function onSubmit(newQuery: Partial<MyQuery>) {
+    query = { ...query, ...newQuery }
+    onRunQuery();
   }
 
   return (
     <div className="gf-form">
       <Form
-        onSubmit={(newQuery: Partial<MyQuery>) => query = { ...query, ...newQuery }}
+        onSubmit={onSubmit}
       >{({register, errors}) => {
+        let queryComponent = renderQuery();
         return (
           <div>
             <SelectComponent/>
-            {renderQuery()}
-            <Button type="submit" onClick={onRunQuery}>Run</Button>
+            {queryComponent}
+            <Button type="submit">Run</Button>
           </div>
         )
       }}</Form>
