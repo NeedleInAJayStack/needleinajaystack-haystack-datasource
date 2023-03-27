@@ -2,9 +2,9 @@ import React, { ChangeEvent, ReactNode } from 'react';
 import { Button, Field, Form, Icon, InlineField, Input, Select } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
-import { DEFAULT_QUERY, MyDataSourceOptions, MyQuery } from '../types';
+import { DEFAULT_QUERY, HaystackDataSourceOptions, HaystackQuery } from '../types';
 
-type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
+type Props = QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions>;
 
 export function QueryEditor({ query, onChange, onRunQuery }: Props) {
   const onTypeChange = (event: SelectableValue<number>) => {
@@ -78,7 +78,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
     return <p>Select a query type</p>
   }
 
-  function onSubmit(newQuery: Partial<MyQuery>) {
+  function onSubmit(newQuery: Partial<HaystackQuery>) {
     query = { ...query, ...newQuery }
     onRunQuery();
   }
@@ -88,11 +88,10 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
       <Form
         onSubmit={onSubmit}
       >{({register, errors}) => {
-        let queryComponent = renderQuery();
         return (
           <div>
             <SelectComponent/>
-            {queryComponent}
+            {renderQuery()}
             <Button type="submit">Run</Button>
           </div>
         )
