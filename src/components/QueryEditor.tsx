@@ -23,7 +23,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
 
   const queryTypes = [
     { label: 'Eval', value: 0, description: 'Evaluate an Axon expression' },
-    { label: 'HisRead', value: 1, description: 'Read the histories of a list of points' },
+    { label: 'HisRead', value: 1, description: 'Read the history of a point' },
     { label: 'Read', value: 2, description: 'Read the records matched by a filter' }
   ];
   const queryTypeDefault = queryTypes[0];
