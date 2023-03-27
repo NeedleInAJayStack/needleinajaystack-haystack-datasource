@@ -12,10 +12,10 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
     onChange({ ...query, type: queryTypes[queryTypeIndex].label });
   };
   const onEvalChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...query, eval: event.target.value });
+    onChange({ ...query, type: 'Eval', eval: event.target.value });
   };
   const onHisReadChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...query, hisRead: event.target.value });
+    onChange({ ...query, type: 'HisRead', hisRead: event.target.value });
   };
 
   const queryTypes = [
@@ -46,11 +46,11 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
     switch(queryType.value) {
       case 0: // Eval
         return <InlineField label="Axon" labelWidth="auto" tooltip="An Axon expression to evaluate on the Haystack server">
-          <Input width={100} prefix={<Icon name="angle-right" />} onChange={onEvalChange} value={query.eval ?? DEFAULT_QUERY.eval} />
+          <Input width={100} prefix={<Icon name="angle-right" />} onChange={onEvalChange} value={query.eval} placeholder={DEFAULT_QUERY.eval} />
         </InlineField>
       case 1: // HisRead
         return <InlineField label="Point ID" labelWidth="auto" tooltip="The ID of the point to read">
-          <Input width={100} prefix={<Icon name="angle-right" />} onChange={onHisReadChange} value={query.hisRead ?? DEFAULT_QUERY.hisRead} />
+          <Input width={100} prefix={<Icon name="angle-right" />} onChange={onHisReadChange} value={query.hisRead} placeholder={DEFAULT_QUERY.hisRead} />
         </InlineField>
     }
     return <p>Select a query type</p>
@@ -59,7 +59,6 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
   return (
     <div className="gf-form">
       <Form
-        defaultValues={DEFAULT_QUERY}
         onSubmit={(newQuery: Partial<MyQuery>) => query = { ...query, ...newQuery }}
       >{({register, errors}) => {
         return (
