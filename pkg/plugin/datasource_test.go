@@ -10,9 +10,9 @@ import (
 
 	"github.com/NeedleInAJayStack/haystack/client"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/joho/godotenv"
-	"github.com/unknwon/log"
 )
 
 // To run these tests, do the following:
@@ -51,7 +51,7 @@ func TestQueryData_Eval_Variables(t *testing.T) {
 func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing.T) data.Frame {
 	err := godotenv.Load("../.env")
 	if err != nil {
-		log.Warn(".env file not found, falling back to local environment")
+		log.DefaultLogger.Warn(".env file not found, falling back to local environment")
 	}
 
 	client := client.NewClient(

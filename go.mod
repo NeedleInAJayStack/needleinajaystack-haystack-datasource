@@ -4,7 +4,10 @@ go 1.19
 
 require github.com/grafana/grafana-plugin-sdk-go v0.149.1
 
-require github.com/NeedleInAJayStack/haystack v0.1.4
+require (
+	github.com/NeedleInAJayStack/haystack v0.1.5
+	github.com/joho/godotenv v1.5.1
+)
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
@@ -31,7 +34,6 @@ require (
 	github.com/hashicorp/go-hclog v0.14.1 // indirect
 	github.com/hashicorp/go-plugin v1.4.3 // indirect
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.1 // indirect

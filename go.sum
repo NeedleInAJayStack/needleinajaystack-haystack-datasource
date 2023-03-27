@@ -35,8 +35,8 @@ gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zum
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/NeedleInAJayStack/haystack v0.1.4 h1:qJsouMtrr4wg9+s4Hx2Nxw6neKRxDnySZ6UMZuGwCj8=
-github.com/NeedleInAJayStack/haystack v0.1.4/go.mod h1:Oho5sG64nQS27mApp6gWOUi7m4OgzpWllZrOtZn8qss=
+github.com/NeedleInAJayStack/haystack v0.1.5 h1:pT+xWnXH6ogtqXbBXyg0TSFJAwCscjrTTAESyR3eAyE=
+github.com/NeedleInAJayStack/haystack v0.1.5/go.mod h1:Oho5sG64nQS27mApp6gWOUi7m4OgzpWllZrOtZn8qss=
 github.com/ajstarks/svgo v0.0.0-20180226025133-644b8db467af/go.mod h1:K08gAheRH3/J6wwsYMMT4xOr94bZjxIelGM0+d/wbFw=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
