@@ -53,25 +53,19 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
       case 0: // Eval
         return (
         <Field>
-          <InlineField label="Axon" labelWidth="auto" tooltip="An Axon expression to evaluate on the Haystack server">
-            <Input width={100} prefix={<Icon name="angle-right" />} onChange={onEvalChange} value={query.eval} placeholder={DEFAULT_QUERY.eval} />
-          </InlineField>
+          <Input width={100} prefix={<Icon name="angle-right" />} onChange={onEvalChange} value={query.eval} placeholder={DEFAULT_QUERY.eval} />
         </Field>
         );
       case 1: // HisRead
         return (
         <Field>
-          <InlineField label="Point ID" labelWidth="auto" tooltip="The ID of the point to read">
-            <Input width={100} prefix={"@"} onChange={onHisReadChange} value={query.hisRead} placeholder={DEFAULT_QUERY.hisRead} />
-          </InlineField>
+          <Input width={30} prefix={"@"} onChange={onHisReadChange} value={query.hisRead} placeholder={DEFAULT_QUERY.hisRead} />
         </Field>
         );
       case 2: // Read
         return (
         <Field>
-          <InlineField label="Filter" labelWidth="auto" tooltip="A filter for the desired records">
-            <Input width={100} prefix={<Icon name="filter" />} onChange={onReadChange} value={query.read} placeholder={DEFAULT_QUERY.read} />
-          </InlineField>
+          <Input width={75} prefix={<Icon name="filter" />} onChange={onReadChange} value={query.read} placeholder={DEFAULT_QUERY.read} />
         </Field>
         );
     }
