@@ -54,3 +54,4 @@ To use them, simply use the value in the input string like this:
 # Continuing Work
 
 * [ ] Publish plugin
+* [ ] Consider enabling multi-point hisRead (through filters)
