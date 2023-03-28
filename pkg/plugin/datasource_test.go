@@ -3,12 +3,12 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/NeedleInAJayStack/haystack/client"
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -20,35 +20,62 @@ import (
 // 1. Set up a `.env` file in the `/pkg` directory with these env vars: `TEST_URL`, `TEST_USERNAME`, `TEST_PASSWORD`
 
 func TestQueryData_Eval(t *testing.T) {
-	data := getResponse(
+	actual := getResponse(
 		&QueryModel{
 			Type: "Eval",
-			Eval: "[{ts: now()-1hr, v0: 0}, {ts: now(), v0: 10}].toGrid",
+			Eval: "{a: \"a\", b: \"b\"}",
 		},
 		backend.TimeRange{},
 		t,
 	)
-	table, _ := data.StringTable(10, 100)
-	fmt.Printf("frame: %v\n", table)
+
+	aVal := "a"
+	bVal := "b"
+	expected := data.NewFrame("",
+		data.NewField("a", nil, []*string{&aVal}).SetConfig(&data.FieldConfig{DisplayName: "a"}),
+		data.NewField("b", nil, []*string{&bVal}).SetConfig(&data.FieldConfig{DisplayName: "b"}),
+	)
+
+	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
+	}
 }
 
 func TestQueryData_Eval_Variables(t *testing.T) {
-	data := getResponse(
+	actual := getResponse(
 		&QueryModel{
 			Type: "Eval",
 			Eval: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
 		},
 		backend.TimeRange{
-			From: time.Now().Add(-1 * time.Hour),
-			To:   time.Now(),
+			From: time.Unix(0, 0),
+			To:   time.Unix(60, 0),
 		},
 		t,
 	)
-	table, _ := data.StringTable(10, 100)
-	fmt.Printf("frame: %v\n", table)
+
+	var v0_0, v0_1 float64
+	ts_0 := time.Unix(0, 0)
+	v0_0 = 0
+	ts_1 := time.Unix(60, 0)
+	v0_1 = 10
+	expected := data.NewFrame("",
+		data.NewField("ts", nil, []*time.Time{
+			&ts_0,
+			&ts_1,
+		}).SetConfig(&data.FieldConfig{DisplayName: "ts"}),
+		data.NewField("v0", nil, []*float64{
+			&v0_0,
+			&v0_1,
+		}).SetConfig(&data.FieldConfig{DisplayName: "v0"}),
+	)
+
+	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
+	}
 }
 
-func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing.T) data.Frame {
+func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing.T) *data.Frame {
 	err := godotenv.Load("../.env")
 	if err != nil {
 		log.DefaultLogger.Warn(".env file not found, falling back to local environment")
@@ -103,5 +130,5 @@ func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing
 	if len(queryResponse.Frames) != 1 {
 		t.Fatal("Currently only support single-frame results")
 	}
-	return *queryResponse.Frames[0]
+	return queryResponse.Frames[0]
 }
