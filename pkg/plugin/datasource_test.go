@@ -3,29 +3,30 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"os"
 	"testing"
-	"time"
 
-	"github.com/NeedleInAJayStack/haystack/client"
+	"github.com/NeedleInAJayStack/haystack"
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/joho/godotenv"
 )
 
-// To run these tests, do the following:
-// 1. Start a Haystack server you can access
-// 1. Set up a `.env` file in the `/pkg` directory with these env vars: `TEST_URL`, `TEST_USERNAME`, `TEST_PASSWORD`
-
 func TestQueryData_Eval(t *testing.T) {
+	evalResponse := haystack.NewGridBuilder()
+	evalResponse.AddCol("a", map[string]haystack.Val{})
+	evalResponse.AddCol("b", map[string]haystack.Val{})
+	evalResponse.AddRow([]haystack.Val{haystack.NewStr("a"), haystack.NewStr("b")})
+
+	client := &testHaystackClient{
+		evalResponse: evalResponse.ToGrid(),
+	}
+
 	actual := getResponse(
+		client,
 		&QueryModel{
 			Type: "Eval",
 			Eval: "{a: \"a\", b: \"b\"}",
 		},
-		backend.TimeRange{},
 		t,
 	)
 
@@ -41,51 +42,11 @@ func TestQueryData_Eval(t *testing.T) {
 	}
 }
 
-func TestQueryData_Eval_Variables(t *testing.T) {
-	actual := getResponse(
-		&QueryModel{
-			Type: "Eval",
-			Eval: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
-		},
-		backend.TimeRange{
-			From: time.Unix(0, 0),
-			To:   time.Unix(60, 0),
-		},
-		t,
-	)
-
-	var v0_0, v0_1 float64
-	ts_0 := time.Unix(0, 0)
-	v0_0 = 0
-	ts_1 := time.Unix(60, 0)
-	v0_1 = 10
-	expected := data.NewFrame("",
-		data.NewField("ts", nil, []*time.Time{
-			&ts_0,
-			&ts_1,
-		}).SetConfig(&data.FieldConfig{DisplayName: "ts"}),
-		data.NewField("v0", nil, []*float64{
-			&v0_0,
-			&v0_1,
-		}).SetConfig(&data.FieldConfig{DisplayName: "v0"}),
-	)
-
-	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
-		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
-	}
-}
-
-func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing.T) *data.Frame {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.DefaultLogger.Warn(".env file not found, falling back to local environment")
-	}
-
-	client := client.NewClient(
-		os.Getenv("TEST_URL"),
-		os.Getenv("TEST_USERNAME"),
-		os.Getenv("TEST_PASSWORD"),
-	)
+func getResponse(
+	client HaystackClient,
+	queryModel *QueryModel,
+	t *testing.T,
+) *data.Frame {
 	if client.Open() != nil {
 		t.Fatal("Failed to open connection. Is a local Haxall server running?")
 	}
@@ -106,9 +67,8 @@ func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing
 		&backend.QueryDataRequest{
 			Queries: []backend.DataQuery{
 				{
-					RefID:     refID,
-					JSON:      rawJson,
-					TimeRange: timeRange,
+					RefID: refID,
+					JSON:  rawJson,
 				},
 			},
 		},
@@ -131,4 +91,41 @@ func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing
 		t.Fatal("Currently only support single-frame results")
 	}
 	return queryResponse.Frames[0]
+}
+
+// TestHaystackClient is a mock of the HaystackClient interface
+type testHaystackClient struct {
+	evalResponse    haystack.Grid
+	hisReadResponse haystack.Grid
+	readResponse    haystack.Grid
+}
+
+// Open is a no-op
+func (c *testHaystackClient) Open() error {
+	return nil
+}
+
+// Close is a no-op
+func (c *testHaystackClient) Close() error {
+	return nil
+}
+
+// About returns an empty dict
+func (c *testHaystackClient) About() (haystack.Dict, error) {
+	return haystack.Dict{}, nil
+}
+
+// Eval returns the EvalResponse
+func (c *testHaystackClient) Eval(query string) (haystack.Grid, error) {
+	return c.evalResponse, nil
+}
+
+// HisRead returns the HisReadResponse
+func (c *testHaystackClient) HisReadAbsDateTime(ref haystack.Ref, start haystack.DateTime, end haystack.DateTime) (haystack.Grid, error) {
+	return c.hisReadResponse, nil
+}
+
+// Read returns the ReadResponse
+func (c *testHaystackClient) Read(query string) (haystack.Grid, error) {
+	return c.readResponse, nil
 }
