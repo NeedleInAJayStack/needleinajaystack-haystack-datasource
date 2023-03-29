@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/NeedleInAJayStack/haystack"
 	"github.com/google/go-cmp/cmp"
@@ -12,13 +13,13 @@ import (
 )
 
 func TestQueryData_Eval(t *testing.T) {
-	evalResponse := haystack.NewGridBuilder()
-	evalResponse.AddCol("a", map[string]haystack.Val{})
-	evalResponse.AddCol("b", map[string]haystack.Val{})
-	evalResponse.AddRow([]haystack.Val{haystack.NewStr("a"), haystack.NewStr("b")})
+	response := haystack.NewGridBuilder()
+	response.AddCol("a", map[string]haystack.Val{})
+	response.AddCol("b", map[string]haystack.Val{})
+	response.AddRow([]haystack.Val{haystack.NewStr("a"), haystack.NewStr("b")})
 
 	client := &testHaystackClient{
-		evalResponse: evalResponse.ToGrid(),
+		evalResponse: response.ToGrid(),
 	}
 
 	actual := getResponse(
@@ -35,6 +36,75 @@ func TestQueryData_Eval(t *testing.T) {
 	expected := data.NewFrame("",
 		data.NewField("a", nil, []*string{&aVal}).SetConfig(&data.FieldConfig{DisplayName: "a"}),
 		data.NewField("b", nil, []*string{&bVal}).SetConfig(&data.FieldConfig{DisplayName: "b"}),
+	)
+
+	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
+	}
+}
+
+func TestQueryData_HisRead(t *testing.T) {
+	response := haystack.NewGridBuilder()
+	response.AddCol("ts", map[string]haystack.Val{})
+	response.AddCol("v0", map[string]haystack.Val{})
+	response.AddRow([]haystack.Val{haystack.NewDateTimeFromGo(time.Unix(0, 0)), haystack.NewNumber(5, "kWh")})
+
+	client := &testHaystackClient{
+		hisReadResponse: response.ToGrid(),
+	}
+
+	actual := getResponse(
+		client,
+		&QueryModel{
+			Type:    "HisRead",
+			HisRead: "abcdefg-12345678",
+		},
+		t,
+	)
+
+	tsVal := time.Unix(0, 0)
+	v0Val := 5.0
+	expected := data.NewFrame("",
+		data.NewField("ts", nil, []*time.Time{&tsVal}).SetConfig(&data.FieldConfig{DisplayName: "ts"}),
+		data.NewField("v0", nil, []*float64{&v0Val}).SetConfig(&data.FieldConfig{DisplayName: "v0"}),
+	)
+
+	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
+	}
+}
+
+func TestQueryData_Read(t *testing.T) {
+	response := haystack.NewGridBuilder()
+	response.AddCol("id", map[string]haystack.Val{})
+	response.AddCol("dis", map[string]haystack.Val{})
+	response.AddCol("ahu", map[string]haystack.Val{})
+	response.AddRow([]haystack.Val{
+		haystack.NewRef("abcdefg-12345678", "AHU-1"),
+		haystack.NewStr("AHU-1"),
+		haystack.NewMarker(),
+	})
+
+	client := &testHaystackClient{
+		readResponse: response.ToGrid(),
+	}
+
+	actual := getResponse(
+		client,
+		&QueryModel{
+			Type: "Read",
+			Read: "ahu",
+		},
+		t,
+	)
+
+	idVal := "@abcdefg-12345678 \"AHU-1\""
+	disVal := "AHU-1"
+	ahuVal := "M"
+	expected := data.NewFrame("",
+		data.NewField("id", nil, []*string{&idVal}).SetConfig(&data.FieldConfig{DisplayName: "id"}),
+		data.NewField("dis", nil, []*string{&disVal}).SetConfig(&data.FieldConfig{DisplayName: "dis"}),
+		data.NewField("ahu", nil, []*string{&ahuVal}).SetConfig(&data.FieldConfig{DisplayName: "ahu"}),
 	)
 
 	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
