@@ -3,62 +3,120 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/NeedleInAJayStack/haystack/client"
+	"github.com/NeedleInAJayStack/haystack"
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/joho/godotenv"
 )
 
-// To run these tests, do the following:
-// 1. Start a Haystack server you can access
-// 1. Set up a `.env` file in the `/pkg` directory with these env vars: `TEST_URL`, `TEST_USERNAME`, `TEST_PASSWORD`
-
 func TestQueryData_Eval(t *testing.T) {
-	data := getResponse(
-		&QueryModel{
-			Type: "Eval",
-			Eval: "[{ts: now()-1hr, v0: 0}, {ts: now(), v0: 10}].toGrid",
-		},
-		backend.TimeRange{},
-		t,
-	)
-	table, _ := data.StringTable(10, 100)
-	fmt.Printf("frame: %v\n", table)
-}
+	response := haystack.NewGridBuilder()
+	response.AddCol("a", map[string]haystack.Val{})
+	response.AddCol("b", map[string]haystack.Val{})
+	response.AddRow([]haystack.Val{haystack.NewStr("a"), haystack.NewStr("b")})
 
-func TestQueryData_Eval_Variables(t *testing.T) {
-	data := getResponse(
-		&QueryModel{
-			Type: "Eval",
-			Eval: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
-		},
-		backend.TimeRange{
-			From: time.Now().Add(-1 * time.Hour),
-			To:   time.Now(),
-		},
-		t,
-	)
-	table, _ := data.StringTable(10, 100)
-	fmt.Printf("frame: %v\n", table)
-}
-
-func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing.T) data.Frame {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.DefaultLogger.Warn(".env file not found, falling back to local environment")
+	client := &testHaystackClient{
+		evalResponse: response.ToGrid(),
 	}
 
-	client := client.NewClient(
-		os.Getenv("TEST_URL"),
-		os.Getenv("TEST_USERNAME"),
-		os.Getenv("TEST_PASSWORD"),
+	actual := getResponse(
+		client,
+		&QueryModel{
+			Type: "Eval",
+			Eval: "{a: \"a\", b: \"b\"}",
+		},
+		t,
 	)
+
+	aVal := "a"
+	bVal := "b"
+	expected := data.NewFrame("",
+		data.NewField("a", nil, []*string{&aVal}).SetConfig(&data.FieldConfig{DisplayName: "a"}),
+		data.NewField("b", nil, []*string{&bVal}).SetConfig(&data.FieldConfig{DisplayName: "b"}),
+	)
+
+	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
+	}
+}
+
+func TestQueryData_HisRead(t *testing.T) {
+	response := haystack.NewGridBuilder()
+	response.AddCol("ts", map[string]haystack.Val{})
+	response.AddCol("v0", map[string]haystack.Val{})
+	response.AddRow([]haystack.Val{haystack.NewDateTimeFromGo(time.Unix(0, 0)), haystack.NewNumber(5, "kWh")})
+
+	client := &testHaystackClient{
+		hisReadResponse: response.ToGrid(),
+	}
+
+	actual := getResponse(
+		client,
+		&QueryModel{
+			Type:    "HisRead",
+			HisRead: "abcdefg-12345678",
+		},
+		t,
+	)
+
+	tsVal := time.Unix(0, 0)
+	v0Val := 5.0
+	expected := data.NewFrame("",
+		data.NewField("ts", nil, []*time.Time{&tsVal}).SetConfig(&data.FieldConfig{DisplayName: "ts"}),
+		data.NewField("v0", nil, []*float64{&v0Val}).SetConfig(&data.FieldConfig{DisplayName: "v0"}),
+	)
+
+	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
+	}
+}
+
+func TestQueryData_Read(t *testing.T) {
+	response := haystack.NewGridBuilder()
+	response.AddCol("id", map[string]haystack.Val{})
+	response.AddCol("dis", map[string]haystack.Val{})
+	response.AddCol("ahu", map[string]haystack.Val{})
+	response.AddRow([]haystack.Val{
+		haystack.NewRef("abcdefg-12345678", "AHU-1"),
+		haystack.NewStr("AHU-1"),
+		haystack.NewMarker(),
+	})
+
+	client := &testHaystackClient{
+		readResponse: response.ToGrid(),
+	}
+
+	actual := getResponse(
+		client,
+		&QueryModel{
+			Type: "Read",
+			Read: "ahu",
+		},
+		t,
+	)
+
+	idVal := "@abcdefg-12345678 \"AHU-1\""
+	disVal := "AHU-1"
+	ahuVal := "M"
+	expected := data.NewFrame("",
+		data.NewField("id", nil, []*string{&idVal}).SetConfig(&data.FieldConfig{DisplayName: "id"}),
+		data.NewField("dis", nil, []*string{&disVal}).SetConfig(&data.FieldConfig{DisplayName: "dis"}),
+		data.NewField("ahu", nil, []*string{&ahuVal}).SetConfig(&data.FieldConfig{DisplayName: "ahu"}),
+	)
+
+	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
+	}
+}
+
+func getResponse(
+	client HaystackClient,
+	queryModel *QueryModel,
+	t *testing.T,
+) *data.Frame {
 	if client.Open() != nil {
 		t.Fatal("Failed to open connection. Is a local Haxall server running?")
 	}
@@ -79,9 +137,8 @@ func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing
 		&backend.QueryDataRequest{
 			Queries: []backend.DataQuery{
 				{
-					RefID:     refID,
-					JSON:      rawJson,
-					TimeRange: timeRange,
+					RefID: refID,
+					JSON:  rawJson,
 				},
 			},
 		},
@@ -103,5 +160,42 @@ func getResponse(queryModel *QueryModel, timeRange backend.TimeRange, t *testing
 	if len(queryResponse.Frames) != 1 {
 		t.Fatal("Currently only support single-frame results")
 	}
-	return *queryResponse.Frames[0]
+	return queryResponse.Frames[0]
+}
+
+// TestHaystackClient is a mock of the HaystackClient interface
+type testHaystackClient struct {
+	evalResponse    haystack.Grid
+	hisReadResponse haystack.Grid
+	readResponse    haystack.Grid
+}
+
+// Open is a no-op
+func (c *testHaystackClient) Open() error {
+	return nil
+}
+
+// Close is a no-op
+func (c *testHaystackClient) Close() error {
+	return nil
+}
+
+// About returns an empty dict
+func (c *testHaystackClient) About() (haystack.Dict, error) {
+	return haystack.Dict{}, nil
+}
+
+// Eval returns the EvalResponse
+func (c *testHaystackClient) Eval(query string) (haystack.Grid, error) {
+	return c.evalResponse, nil
+}
+
+// HisRead returns the HisReadResponse
+func (c *testHaystackClient) HisReadAbsDateTime(ref haystack.Ref, start haystack.DateTime, end haystack.DateTime) (haystack.Grid, error) {
+	return c.hisReadResponse, nil
+}
+
+// Read returns the ReadResponse
+func (c *testHaystackClient) Read(query string) (haystack.Grid, error) {
+	return c.readResponse, nil
 }

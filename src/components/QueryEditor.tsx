@@ -1,5 +1,5 @@
 import React, { ChangeEvent, ReactNode } from 'react';
-import { Button, Field, Form, Icon, InlineField, Input, Select } from '@grafana/ui';
+import { Button, Field, Form, Icon, Input, Select } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { DEFAULT_QUERY, HaystackDataSourceOptions, HaystackQuery } from '../types';
@@ -28,7 +28,7 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
   ];
   const queryTypeDefault = queryTypes[0];
   function queryTypeFromLabel(label: string) {
-    return queryTypes.find(queryType => queryType.label == label) ?? queryTypeDefault
+    return queryTypes.find(queryType => queryType.label === label) ?? queryTypeDefault
   }
 
   const SelectComponent = () => {

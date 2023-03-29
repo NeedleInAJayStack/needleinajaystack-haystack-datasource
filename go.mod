@@ -6,7 +6,7 @@ require github.com/grafana/grafana-plugin-sdk-go v0.149.1
 
 require (
 	github.com/NeedleInAJayStack/haystack v0.1.6
-	github.com/joho/godotenv v1.5.1
+	github.com/google/go-cmp v0.5.9
 )
 
 require (
@@ -26,7 +26,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/flatbuffers v2.0.0+incompatible // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect

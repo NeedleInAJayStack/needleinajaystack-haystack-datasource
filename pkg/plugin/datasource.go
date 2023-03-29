@@ -56,7 +56,7 @@ func NewDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 // Datasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
 type Datasource struct {
-	client *client.Client
+	client HaystackClient
 }
 
 type Options struct {
