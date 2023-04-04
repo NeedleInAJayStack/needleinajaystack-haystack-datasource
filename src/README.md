@@ -29,7 +29,7 @@ Haystack query that should be performed. The supported queries are:
 - Read: Display the records matching a filter. Since this is not timeseries data, it can only be viewed in Grafana's
 "Table" view.
 
-#### Variables
+#### Variable Usage
 
 Grafana template variables can be injected into queries using the ordinary syntax, e.g. `$varName`.
 
@@ -46,3 +46,14 @@ To use them, simply enter the value in the input string. Below is an example of 
 ```
 > [{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid
 ```
+
+### Query Variables
+
+You can use the Haystack connector to source variables. Currently, only "Eval"-style variable queries are supported,
+where an Axon string is used to retrieve a grid and the column that contains the variable values is specified. If no
+column is specified, the first one is used.
+
+The value injected by the variable exactly matches the displayed value, with the exception of Ref types, where the
+injected value is only the ID portion (i.e. the dis name is not included in the interpolation). Multiple-select values
+are combined with commas, (`red,blue`), but this may be customized using the
+[advanced variable format options](https://grafana.com/docs/grafana/latest/dashboards/variables/variable-syntax/#advanced-variable-format-options).
