@@ -5,6 +5,11 @@ This is a [Grafana](https://grafana.com/grafana/) plugin that supports direct co
 and supports standard Haystack API operations as well as custom Axon execution, which is supported by
 [SkySpark](https://skyfoundry.com/product) and [Haxall](https://haxall.io/).
 
+## Installation
+
+Long term, the goal is to get this into the Grafana plugin repository. Until then, I must manually sign the plugin
+for your particular Grafana URL. If interested, please contact me at NeedleInAJayStack@protonmail.com.
+
 ## Usage
 
 To use this package, you should already have a working Grafana server. For instructions on how to install and configure
@@ -19,5 +24,7 @@ Contributions are very welcome! For details on how to develop this plugin, see t
 
 ## Continuing Work
 
+* [ ] Check variable support
+* [ ] Add alert support
 * [ ] Publish plugin
 * [ ] Consider enabling multi-point hisRead (through filters)
