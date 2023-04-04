@@ -9,10 +9,6 @@ and supports standard Haystack API operations as well as custom Axon execution, 
 
 ## Usage
 
-### Installation
-
-TODO
-
 ### Create a Data Source
 
 To create a new data source, select `Data Sources` from the Configuration menu represented by the gear icon on the left
