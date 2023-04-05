@@ -7,6 +7,11 @@ export interface HaystackQuery extends DataQuery {
   read: string;
 }
 
+export interface HaystackVariableQuery {
+  column: string;
+  eval: string;
+}
+
 export const DEFAULT_QUERY: Partial<HaystackQuery> = {
   type: "Eval",
   eval: "[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid",
