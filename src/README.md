@@ -24,10 +24,10 @@ one by selecting `+ New Dashboard` from the Dashboard menu in the left panel.
 Once within the panel editor, select your Haystack data source in the Data Sources menu. Next, select the type of
 Haystack query that should be performed. The supported queries are:
 
-- Eval: Evaluate a free-form Axon expression. *Note: Not all Haystack servers support this functionality*
+- Eval: Evaluate a free-form Axon expression. _Note: Not all Haystack servers support this functionality_
 - HisRead: Display the history of a single point over the selected time range.
 - Read: Display the records matching a filter. Since this is not timeseries data, it can only be viewed in Grafana's
-"Table" view.
+  "Table" view.
 
 #### Variable Usage
 
@@ -38,8 +38,8 @@ We also support injecting a few special variables from the time-range selector i
 - `$__timeRange_start`: DateTime start of the selected Grafana time range
 - `$__timeRange_end`: DateTime end of the selected Grafana time range
 - `$__maxDataPoints`: Number representing the pixel width of Grafana's display panel.
-- `$__interval`: Number representing Grafana's recommended data interval. This is the duration of the time range, 
-divided by the number of pixels, delivered in units of minutes.
+- `$__interval`: Number representing Grafana's recommended data interval. This is the duration of the time range,
+  divided by the number of pixels, delivered in units of minutes.
 
 To use them, simply enter the value in the input string. Below is an example of using the variables in an Eval query:
 

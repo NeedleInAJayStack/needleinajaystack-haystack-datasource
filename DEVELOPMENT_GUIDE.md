@@ -1,6 +1,7 @@
 # Development Guide
 
 ## Environment
+
 To get a development environment up and running, first ensure the following are installed:
 
 1. go
@@ -32,7 +33,7 @@ mage -v && docker-compose up
 ## Usage
 
 Create a new data source, select "Haystack", and provide it the details for the Haxall server
-that was started. In order to reference your host machine's network, use the url 
+that was started. In order to reference your host machine's network, use the url
 `http://host.docker.internal:8080/api/`. Click "Save and Test" and make sure that it is
 reported as working.
 
@@ -47,7 +48,7 @@ Alternatively, nearly every Axon query can be visualized using the table view.
 
 # Release
 
-To trigger a new release of the plugin, we need to push a version tag to github. This can be 
+To trigger a new release of the plugin, we need to push a version tag to github. This can be
 achieved with the following steps:
 
 1. Run `npm version <major|minor|patch>`
@@ -87,6 +88,7 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
    ```bash
    mage -l
    ```
+
 ### Frontend
 
 1. Install dependencies
@@ -112,7 +114,7 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
    ```bash
    # Runs the tests and watches for changes, requires git init first
    yarn test
-   
+
    # Exists after running all the tests
    yarn test:ci
    ```
@@ -126,9 +128,9 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
 6. Run the E2E tests (using Cypress)
 
    ```bash
-   # Spin up a Grafana instance first that we tests against 
+   # Spin up a Grafana instance first that we tests against
    yarn server
-   
+
    # Start the tests
    yarn e2e
    ```
@@ -137,12 +139,11 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
 
    ```bash
    yarn lint
-   
+
    # or
 
    yarn lint:fix
    ```
-
 
 # Distributing your plugin
 
@@ -182,7 +183,6 @@ To trigger the workflow we need to push a version tag to github. This can be ach
 
 1. Run `npm version <major|minor|patch>`
 2. Run `git push origin main --follow-tags`
-
 
 ## Learn more
 

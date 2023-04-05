@@ -24,6 +24,6 @@ Contributions are very welcome! For details on how to develop this plugin, see t
 
 ## Continuing Work
 
-* [ ] Add alert support
-* [ ] Publish plugin
-* [ ] Consider enabling multi-point hisRead (through filters)
+- [ ] Add alert support
+- [ ] Publish plugin
+- [ ] Consider enabling multi-point hisRead (through filters)
