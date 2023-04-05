@@ -1,0 +1,6 @@
+# Ignore artifacts:
+.config
+package.json
+package-lock.json
+tsconfig.json
+yarn.lock
