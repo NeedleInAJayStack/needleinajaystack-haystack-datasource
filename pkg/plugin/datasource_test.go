@@ -100,7 +100,7 @@ func TestQueryData_Read(t *testing.T) {
 
 	idVal := "@abcdefg-12345678 \"AHU-1\""
 	disVal := "AHU-1"
-	ahuVal := "M"
+	ahuVal := "✓"
 	expected := data.NewFrame("",
 		data.NewField("id", nil, []*string{&idVal}).SetConfig(&data.FieldConfig{DisplayName: "id"}),
 		data.NewField("dis", nil, []*string{&disVal}).SetConfig(&data.FieldConfig{DisplayName: "dis"}),
