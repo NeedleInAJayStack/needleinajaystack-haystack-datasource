@@ -185,6 +185,11 @@ func (c *testHaystackClient) About() (haystack.Dict, error) {
 	return haystack.Dict{}, nil
 }
 
+// Ops returns an empty grid
+func (c *testHaystackClient) Ops() (haystack.Grid, error) {
+	return haystack.EmptyGrid(), nil
+}
+
 // Eval returns the EvalResponse
 func (c *testHaystackClient) Eval(query string) (haystack.Grid, error) {
 	return c.evalResponse, nil
