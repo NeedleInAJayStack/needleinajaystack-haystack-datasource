@@ -57,3 +57,7 @@ The value injected by the variable exactly matches the displayed value, with the
 injected value is only the ID portion (i.e. the dis name is not included in the interpolation). Multiple-select values
 are combined with commas, (`red,blue`), but this may be customized using the
 [advanced variable format options](https://grafana.com/docs/grafana/latest/dashboards/variables/variable-syntax/#advanced-variable-format-options).
+
+### Alerting
+
+[Standard grafana alerting](https://grafana.com/docs/grafana/latest/alerting/) is supported by this data source.
