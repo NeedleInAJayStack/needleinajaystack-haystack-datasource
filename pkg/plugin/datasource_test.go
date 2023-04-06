@@ -25,7 +25,7 @@ func TestQueryData_Eval(t *testing.T) {
 	actual := getResponse(
 		client,
 		&QueryModel{
-			Type: "Eval",
+			Type: "eval",
 			Eval: "{a: \"a\", b: \"b\"}",
 		},
 		t,
@@ -56,7 +56,7 @@ func TestQueryData_HisRead(t *testing.T) {
 	actual := getResponse(
 		client,
 		&QueryModel{
-			Type:    "HisRead",
+			Type:    "hisRead",
 			HisRead: "abcdefg-12345678",
 		},
 		t,
@@ -92,7 +92,7 @@ func TestQueryData_Read(t *testing.T) {
 	actual := getResponse(
 		client,
 		&QueryModel{
-			Type: "Read",
+			Type: "read",
 			Read: "ahu",
 		},
 		t,
