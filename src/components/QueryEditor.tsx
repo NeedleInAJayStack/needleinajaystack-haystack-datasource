@@ -1,14 +1,14 @@
 import React, { ChangeEvent, ReactNode } from 'react';
 import { AsyncSelect, Button, Form, Icon, InlineField, Input, VerticalGroup } from '@grafana/ui';
-import { DataFrame, DataQueryRequest, Field, getDefaultTimeRange, QueryEditorProps, SelectableValue, Vector } from '@grafana/data';
-import { DataSource } from '../datasource';
-import { DEFAULT_QUERY, HaystackDataSourceOptions, HaystackQuery } from '../types';
+import { QueryEditorProps } from '@grafana/data';
+import { DataSource, queryTypes } from '../datasource';
+import { DEFAULT_QUERY, HaystackDataSourceOptions, HaystackQuery, QueryType } from '../types';
 
 type Props = QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions>;
 
-export function QueryEditor({ datasource, query, onChange, onRunQuery, range, app }: Props) {
-  const onTypeChange = (event: SelectableValue<string>) => {
-    onChange({ ...query, type: event.value ?? queryTypeDefault.value! });
+export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) {
+  const onTypeChange = (event: QueryType | null) => {
+    onChange({ ...query, type: event?.value ?? queryTypeDefault.value! });
   };
   const onEvalChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ ...query, type: 'eval', eval: event.target.value });
@@ -20,83 +20,31 @@ export function QueryEditor({ datasource, query, onChange, onRunQuery, range, ap
     onChange({ ...query, type: 'read', read: event.target.value });
   };
 
-  interface QueryType extends SelectableValue<string> {
-    apiRequirements: string[];
-  } 
-
-  const queryTypes: QueryType[] = [
-    { label: 'Read', value: "read", apiRequirements: ["read"], description: 'Read the records matched by a filter' },
-    { label: 'HisRead', value: "hisRead", apiRequirements: ["hisRead"], description: 'Read the history of a point' },
-    { label: 'Eval', value: "eval", apiRequirements: ["eval"], description: 'Evaluate an Axon expression' },
-  ];
   const queryTypeDefault = queryTypes[0];
-  function queryTypeFromLabel(label: string) {
-    return queryTypes.find((queryType) => queryType.value === label);
+  function queryTypeFromValue(value: string): QueryType | null {
+    return queryTypes.find((queryType) => queryType.value === value) ?? null;
   }
 
   const SelectComponent = () => {
     return (
       <InlineField label="Type">
         <AsyncSelect
-          loadOptions={loadOps}
+          loadOptions={() => {return datasource.loadOps(query.refId);}}
           defaultOptions
-          value={queryTypeFromLabel(query.type)}
+          value={queryTypeFromValue(query.type)}
           width={30}
           onChange={(queryType) => {
-            onTypeChange(queryType);
+            // QueryType comes back as a SelectableValue, so we just convert it to the QueryType
+            onTypeChange(queryTypeFromValue(queryType.value ?? ""));
           }}
         />
       </InlineField>
     );
   };
 
-  // Queries the available ops from the datasource on only returns the ones that are supported.
-  const loadOps = () => {
-    let opsRequest: DataQueryRequest<HaystackQuery> = {
-      requestId: 'ops',
-      dashboardId: 0,
-      interval: '0',
-      intervalMs: 0,
-      panelId: 0,
-      range: range ?? getDefaultTimeRange(),
-      scopedVars: {},
-      targets: [{ type: 'ops' , eval: "", read: "", hisRead: "", refId: query.refId}],
-      timezone: 'UTC',
-      app: 'ops',
-      startTime: 0,
-    }
-    return datasource.query(opsRequest).toPromise().then((result) => {
-      if(result?.state === 'Error') {
-        return [];
-      }
-      let frame = result?.data?.find((frame: DataFrame) => {
-        return frame.refId === query.refId
-      })
-      let opSymbols = frame?.fields?.find((field: Field<any, Vector<string>>) => {
-        return field.name === 'def'
-      }).values ?? [];
-      let ops: string[] = opSymbols.map((opSymbol: string) => {
-        if (opSymbol.startsWith('^op:')) {
-          return opSymbol.substring(4);
-        } else {
-          return opSymbol;
-        }
-      });
-
-      return queryTypes.filter((queryType) => {
-        return queryType.apiRequirements.every((apiRequirement) => {
-          return ops.find((op) => {
-            return op === apiRequirement
-          }) !== undefined;
-        });
-      });
-    });
-  }
-
   function renderQuery(): ReactNode {
     let width = 100;
-    let queryType = queryTypeFromLabel(query.type);
-    switch (queryType?.value) {
+    switch (query.type) {
       case "eval":
         return (
           <InlineField>

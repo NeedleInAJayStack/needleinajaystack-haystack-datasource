@@ -23,7 +23,13 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
     <>
       <div className="gf-form">
         <span className="gf-form-label width-10">Eval</span>
-        <input name="eval" className="gf-form-input" onBlur={saveQuery} onChange={handleChange} value={state.eval} />
+        <input
+          name="eval"
+          className="gf-form-input"
+          onBlur={saveQuery}
+          onChange={handleChange}
+          value={state.eval}
+        />
       </div>
       <div className="gf-form">
         <span className="gf-form-label width-10">Column</span>

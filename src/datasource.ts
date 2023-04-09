@@ -6,14 +6,70 @@ import {
   DataFrame,
   Field,
   MetricFindValue,
+  Vector,
+  getDefaultTimeRange,
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
-import { HaystackQuery, HaystackDataSourceOptions, DEFAULT_QUERY, HaystackVariableQuery } from './types';
+import { HaystackQuery, HaystackDataSourceOptions, DEFAULT_QUERY, HaystackVariableQuery, QueryType } from './types';
+
+export const queryTypes: QueryType[] = [
+  { label: 'Read', value: 'read', apiRequirements: ['read'], description: 'Read the records matched by a filter' },
+  { label: 'HisRead', value: 'hisRead', apiRequirements: ['hisRead'], description: 'Read the history of a point' },
+  { label: 'Eval', value: 'eval', apiRequirements: ['eval'], description: 'Evaluate an Axon expression' },
+];
 
 export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<HaystackDataSourceOptions>) {
     super(instanceSettings);
+  }
+
+  // Queries the available ops from the datasource and returns the queryTypes that are supported.
+  loadOps(refId: string): Promise<QueryType[]> {
+    let opsRequest: DataQueryRequest<HaystackQuery> = {
+      requestId: 'ops',
+      dashboardId: 0,
+      interval: '0',
+      intervalMs: 0,
+      panelId: 0,
+      range: getDefaultTimeRange(),
+      scopedVars: {},
+      targets: [{ type: 'ops', eval: '', read: '', hisRead: '', refId: refId }],
+      timezone: 'UTC',
+      app: 'ops',
+      startTime: 0,
+    };
+    return this.query(opsRequest)
+      .toPromise()
+      .then((result) => {
+        if (result?.state === 'Error') {
+          return [];
+        }
+        let frame = result?.data?.find((frame: DataFrame) => {
+          return frame.refId === refId;
+        });
+        let opSymbols =
+          frame?.fields?.find((field: Field<any, Vector<string>>) => {
+            return field.name === 'def';
+          }).values ?? [];
+        let ops: string[] = opSymbols.map((opSymbol: string) => {
+          if (opSymbol.startsWith('^op:')) {
+            return opSymbol.substring(4);
+          } else {
+            return opSymbol;
+          }
+        });
+
+        return queryTypes.filter((queryType) => {
+          return queryType.apiRequirements.every((apiRequirement) => {
+            return (
+              ops.find((op) => {
+                return op === apiRequirement;
+              }) !== undefined
+            );
+          });
+        });
+      });
   }
 
   applyTemplateVariables(query: HaystackQuery, scopedVars: ScopedVars): Record<string, any> {
