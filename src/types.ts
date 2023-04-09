@@ -12,8 +12,8 @@ export interface QueryType extends SelectableValue<string> {
 }
 
 export interface HaystackVariableQuery {
+  query: HaystackQuery;
   column: string;
-  eval: string;
 }
 
 export const DEFAULT_QUERY: Partial<HaystackQuery> = {

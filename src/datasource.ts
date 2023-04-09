@@ -82,14 +82,8 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
   }
 
   // This is called when the user is selecting a variable value
-  async metricFindQuery(query: HaystackVariableQuery, options?: any) {
-    let request: HaystackQuery = {
-      refId: 'VariableQuery',
-      type: 'eval',
-      eval: query.eval,
-      hisRead: '',
-      read: '',
-    };
+  async metricFindQuery(variableQuery: HaystackVariableQuery, options?: any) {
+    let request: HaystackQuery = variableQuery.query;
     let response = await this.query({ targets: [request] } as DataQueryRequest<HaystackQuery>).toPromise();
 
     if (response === undefined || response.data === undefined) {
@@ -98,9 +92,9 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
 
     return response.data.reduce((acc: MetricFindValue[], frame: DataFrame) => {
       let field = frame.fields[0];
-      if (query.column !== undefined && query.column !== '') {
+      if (variableQuery.column !== undefined && variableQuery.column !== '') {
         // If a column was input, match the column name
-        field = frame.fields.find((field: Field) => field.name === query.column) ?? field;
+        field = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? field;
       }
 
       let fieldVals = field.values.toArray().map((value) => {
