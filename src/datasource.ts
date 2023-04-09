@@ -29,7 +29,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
   async metricFindQuery(query: HaystackVariableQuery, options?: any) {
     let request: HaystackQuery = {
       refId: 'VariableQuery',
-      type: 'Eval',
+      type: 'eval',
       eval: query.eval,
       hisRead: '',
       read: '',

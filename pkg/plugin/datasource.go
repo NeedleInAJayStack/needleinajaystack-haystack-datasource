@@ -123,21 +123,28 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 
 	var grid haystack.Grid
 	switch model.Type {
-	case "Eval":
+	case "ops":
+		ops, err := datasource.ops()
+		if err != nil {
+			log.DefaultLogger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Ops eval failure: %v", err.Error()))
+		}
+		grid = ops
+	case "eval":
 		eval, err := datasource.eval(model.Eval, variables)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", err.Error()))
 		}
 		grid = eval
-	case "HisRead":
+	case "hisRead":
 		hisRead, err := datasource.hisRead(model.HisRead, query.TimeRange)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisRead failure: %v", err.Error()))
 		}
 		grid = hisRead
-	case "Read":
+	case "read":
 		read, err := datasource.read(model.Read, variables)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
@@ -183,6 +190,22 @@ func (datasource *Datasource) CheckHealth(_ context.Context, req *backend.CheckH
 		Status:  backend.HealthStatusOk,
 		Message: "Data source is working",
 	}, nil
+}
+
+func (datasource *Datasource) ops() (haystack.Grid, error) {
+	result, err := datasource.client.Ops()
+	// If the error is a 404, try to reconnect and try again
+	switch error := err.(type) {
+	case client.HTTPError:
+		if error.Code == 404 {
+			datasource.client.Open()
+			return datasource.client.Ops()
+		} else {
+			return result, err
+		}
+	default:
+		return result, err
+	}
 }
 
 func (datasource *Datasource) eval(expr string, variables map[string]string) (haystack.Grid, error) {
