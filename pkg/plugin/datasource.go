@@ -332,6 +332,8 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 				case haystack.Marker:
 					value := "✓"
 					values = append(values, &value)
+				case haystack.Null:
+					values = append(values, nil)
 				default:
 					value := val.ToZinc()
 					values = append(values, &value)

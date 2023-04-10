@@ -5,6 +5,8 @@ This is a [Grafana](https://grafana.com/grafana/) plugin that supports direct co
 and supports standard Haystack API operations as well as custom Axon execution, which is supported by
 [SkySpark](https://skyfoundry.com/product) and [Haxall](https://haxall.io/).
 
+![Dashboard Example](src/img/screenshot/dashboard.png)
+
 ## Installation
 
 Long term, the goal is to get this into the Grafana plugin repository. Until then, I must manually sign the plugin

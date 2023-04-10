@@ -18,7 +18,20 @@
       "large": "img/project-haystack-logo.png"
     },
     "links": [],
-    "screenshots": [],
+    "screenshots": [
+      {
+        "name": "Dashboard",
+        "src": "img/screenshot/dashboard.png"
+      },
+      {
+        "name": "Query Editor",
+        "src": "img/screenshot/query-editor.png"
+      },
+      {
+        "name": "Variable Editor",
+        "src": "img/screenshot/variable-editor.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
