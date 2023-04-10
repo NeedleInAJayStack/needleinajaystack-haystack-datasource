@@ -14,10 +14,8 @@ for your particular Grafana URL. If interested, please contact me at NeedleInAJa
 
 ## Usage
 
-To use this package, you should already have a working Grafana server. For instructions on how to install and configure
-Grafana, see [here](https://grafana.com/docs/grafana/latest/)
-
-For more usage information, see the [plugin readme](./src/README.md)
+To use this package, [install and configure a Grafana server](https://grafana.com/docs/grafana/latest/). Then follow
+the instructions in the [plugin readme](./src/README.md)
 
 ## Contributing
 
