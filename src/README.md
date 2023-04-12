@@ -49,9 +49,8 @@ To use them, simply enter the value in the input string. Below is an example of 
 
 ### Query Variables
 
-You can use the Haystack connector to source variables. Currently, only "Eval"-style variable queries are supported,
-where an Axon string is used to retrieve a grid and the column that contains the variable values is specified. If no
-column is specified, the first one is used.
+You can use the Haystack connector to source variables. Create a query and then enter the column that contains the
+variable values. If no column is specified, the first one is used.
 
 The value injected by the variable exactly matches the displayed value, with the exception of Ref types, where the
 injected value is only the ID portion (i.e. the dis name is not included in the interpolation). Multiple-select values

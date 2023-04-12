@@ -1,4 +1,4 @@
-import { DataQuery, DataSourceJsonData } from '@grafana/data';
+import { DataQuery, DataSourceJsonData, SelectableValue } from '@grafana/data';
 
 export interface HaystackQuery extends DataQuery {
   type: string; // Defines the type of query that should be executed
@@ -7,9 +7,13 @@ export interface HaystackQuery extends DataQuery {
   read: string;
 }
 
+export interface QueryType extends SelectableValue<string> {
+  apiRequirements: string[];
+}
+
 export interface HaystackVariableQuery {
+  query: HaystackQuery;
   column: string;
-  eval: string;
 }
 
 export const DEFAULT_QUERY: Partial<HaystackQuery> = {
