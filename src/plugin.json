@@ -21,15 +21,15 @@
     "screenshots": [
       {
         "name": "Dashboard",
-        "src": "img/screenshot/dashboard.png"
+        "path": "img/screenshot/dashboard.png"
       },
       {
         "name": "Query Editor",
-        "src": "img/screenshot/query-editor.png"
+        "path": "img/screenshot/query-editor.png"
       },
       {
         "name": "Variable Editor",
-        "src": "img/screenshot/variable-editor.png"
+        "path": "img/screenshot/variable-editor.png"
       }
     ],
     "version": "%VERSION%",
