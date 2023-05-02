@@ -8,7 +8,6 @@ To get a development environment up and running, first ensure the following are 
 2. mage
 3. yarn
 4. docker
-5. [Haxall](https://haxall.io/doc/docHaxall/Setup)
 
 Then run the following in **different terminals**:
 
@@ -18,24 +17,17 @@ Then run the following in **different terminals**:
 yarn dev
 ```
 
-2. Build the back-end and inject it into a docker image:
+1. Build the back-end, inject it into a docker image, and run it alongside a Haxall server:
 
 ```bash
 mage -v && docker-compose up
 ```
 
-3. Run Haxall (the below command is an example):
-
-```bash
-./bin/hx run ./proj/test
-```
-
 ## Usage
 
-Create a new data source, select "Haystack", and provide it the details for the Haxall server
-that was started. In order to reference your host machine's network, use the url
-`http://host.docker.internal:8080/api/`. Click "Save and Test" and make sure that it is
-reported as working.
+Create a new data source and select "Haystack". If no Docker configuration has been edited, the Haystack API is available at
+`http://haxall:8080/api/`, with the username `su` and password `su`. Click "Save and Test" and make sure that it is
+working.
 
 Create a new dashboard and panel, and use this axon query to test the connection:
 
@@ -44,7 +36,7 @@ Create a new dashboard and panel, and use this axon query to test the connection
 ```
 
 Note that if your grid's first column is a date-time you can use it with the timeseries chart.
-Alternatively, nearly every Axon query can be visualized using the table view.
+Otherwise, nearly every Axon query can be visualized using the table view.
 
 # Release
 
