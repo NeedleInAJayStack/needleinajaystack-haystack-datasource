@@ -1,6 +1,6 @@
 {
   "name": "haystack-datasource",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A Grafana data source for Haystack tagged data",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
