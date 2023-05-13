@@ -24,7 +24,6 @@ export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) 
 
   function onSubmit(newQuery: Partial<HaystackQuery>) {
     query = { ...query, ...newQuery };
-    console.info('onSubmit', query);
     onRunQuery();
   }
 
