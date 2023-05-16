@@ -45,7 +45,7 @@ main() {
   mage buildAll
 
   # Sign plugin
-  npx --yes @grafana/sign-plugin --rootUrls ${rootUrls}
+  npx @grafana/sign-plugin
 
   # Get plugin metadata
   plugin_id=$(cat dist/plugin.json | jq -r .id)
