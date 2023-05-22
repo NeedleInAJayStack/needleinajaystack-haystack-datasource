@@ -127,14 +127,14 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		ops, err := datasource.ops()
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
-			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Ops eval failure: %v", err.Error()))
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Ops failure: %v", err.Error()))
 		}
 		grid = ops
 	case "eval":
 		eval, err := datasource.eval(model.Eval, variables)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
-			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Axon eval failure: %v", err.Error()))
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Eval failure: %v", err.Error()))
 		}
 		grid = eval
 	case "hisRead":
@@ -193,32 +193,60 @@ func (datasource *Datasource) CheckHealth(_ context.Context, req *backend.CheckH
 }
 
 func (datasource *Datasource) ops() (haystack.Grid, error) {
-	result, err := datasource.client.Ops()
-	// If the error is a 404, try to reconnect and try again
-	switch error := err.(type) {
-	case client.HTTPError:
-		if error.Code == 404 {
-			datasource.client.Open()
+	return datasource.withRetry(
+		func() (haystack.Grid, error) {
 			return datasource.client.Ops()
-		} else {
-			return result, err
-		}
-	default:
-		return result, err
-	}
+		},
+	)
 }
 
 func (datasource *Datasource) eval(expr string, variables map[string]string) (haystack.Grid, error) {
 	for name, val := range variables {
 		expr = strings.ReplaceAll(expr, name, val)
 	}
-	result, err := datasource.client.Eval(expr)
-	// If the error is a 404, try to reconnect and try again
+
+	return datasource.withRetry(
+		func() (haystack.Grid, error) {
+			return datasource.client.Eval(expr)
+		},
+	)
+}
+
+func (datasource *Datasource) hisRead(id string, timeRange backend.TimeRange) (haystack.Grid, error) {
+	ref := haystack.NewRef(id, "")
+	start := haystack.NewDateTimeFromGo(timeRange.From.UTC())
+	end := haystack.NewDateTimeFromGo(timeRange.To.UTC())
+
+	return datasource.withRetry(
+		func() (haystack.Grid, error) {
+			return datasource.client.HisReadAbsDateTime(ref, start, end)
+		},
+	)
+}
+
+func (datasource *Datasource) read(filter string, variables map[string]string) (haystack.Grid, error) {
+	for name, val := range variables {
+		filter = strings.ReplaceAll(filter, name, val)
+	}
+
+	return datasource.withRetry(
+		func() (haystack.Grid, error) {
+			return datasource.client.Read(filter)
+		},
+	)
+}
+
+// withRetry will retry the given operation if it fails with a 403 or 404 error
+func (datasource *Datasource) withRetry(
+	operation func() (haystack.Grid, error),
+) (haystack.Grid, error) {
+	result, err := operation()
+	// If the error is a 403 or 404, try to reconnect and try again
 	switch error := err.(type) {
 	case client.HTTPError:
-		if error.Code == 404 {
+		if error.Code == 404 || error.Code == 403 {
 			datasource.client.Open()
-			return datasource.client.Eval(expr)
+			return operation()
 		} else {
 			return result, err
 		}
@@ -227,20 +255,7 @@ func (datasource *Datasource) eval(expr string, variables map[string]string) (ha
 	}
 }
 
-func (datasource *Datasource) hisRead(id string, timeRange backend.TimeRange) (haystack.Grid, error) {
-	ref := haystack.NewRef(id, "")
-	start := haystack.NewDateTimeFromGo(timeRange.From.UTC())
-	end := haystack.NewDateTimeFromGo(timeRange.To.UTC())
-	return datasource.client.HisReadAbsDateTime(ref, start, end)
-}
-
-func (datasource *Datasource) read(filter string, variables map[string]string) (haystack.Grid, error) {
-	for name, val := range variables {
-		filter = strings.ReplaceAll(filter, name, val)
-	}
-	return datasource.client.Read(filter)
-}
-
+// dataFrameFromGrid converts a haystack grid to a Grafana data frame
 func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 	fields := []*data.Field{}
 
@@ -370,6 +385,7 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 
 type colType int
 
+// colType represents the type of a column in a haystack grid
 const (
 	none colType = iota
 	dateTime
