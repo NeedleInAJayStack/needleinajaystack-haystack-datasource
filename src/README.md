@@ -1,5 +1,3 @@
-<!-- This README file is going to be the one displayed on the Grafana.com website for your plugin -->
-
 # Haystack Data Source Plugin
 
 This is a [Grafana](https://grafana.com/grafana/) data source plugin that supports direct communication with a
@@ -60,3 +58,8 @@ are combined with commas, (`red,blue`), but this may be customized using the
 ### Alerting
 
 [Standard grafana alerting](https://grafana.com/docs/grafana/latest/alerting/) is supported by this data source.
+
+## Support
+
+You can view the code, contribute, or request support on this project's
+[GitHub repo](https://github.com/NeedleInAJayStack/needleinajaystack-haystack-datasource)
