@@ -112,6 +112,57 @@ func TestQueryData_Read(t *testing.T) {
 	}
 }
 
+func TestQueryData_Nav(t *testing.T) {
+	response := haystack.NewGridBuilder()
+	response.AddCol("id", map[string]haystack.Val{})
+	response.AddCol("dis", map[string]haystack.Val{})
+	response.AddCol("ahu", map[string]haystack.Val{})
+	response.AddRow([]haystack.Val{
+		haystack.NewRef("abcdefg-12345678", "AHU-1"),
+		haystack.NewStr("AHU-1"),
+		haystack.NewMarker(),
+	})
+
+	client := &testHaystackClient{
+		navResponse: response.ToGrid(),
+	}
+
+	idVal := "@abcdefg-12345678 \"AHU-1\""
+	disVal := "AHU-1"
+	ahuVal := "✓"
+	expected := data.NewFrame("",
+		data.NewField("id", nil, []*string{&idVal}).SetConfig(&data.FieldConfig{DisplayName: "id"}),
+		data.NewField("dis", nil, []*string{&disVal}).SetConfig(&data.FieldConfig{DisplayName: "dis"}),
+		data.NewField("ahu", nil, []*string{&ahuVal}).SetConfig(&data.FieldConfig{DisplayName: "ahu"}),
+	)
+
+	// Test that the root query works and the response is returned.
+	actual_root := getResponse(
+		client,
+		&QueryModel{
+			Type: "nav",
+			Nav:  nil,
+		},
+		t,
+	)
+	if !cmp.Equal(actual_root, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual_root, expected, data.FrameTestCompareOptions()...))
+	}
+
+	// Test that the branch query parses and the response is returned.
+	actual_branch := getResponse(
+		client,
+		&QueryModel{
+			Type: "nav",
+			Nav:  &idVal,
+		},
+		t,
+	)
+	if !cmp.Equal(actual_branch, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual_root, expected, data.FrameTestCompareOptions()...))
+	}
+}
+
 func getResponse(
 	client HaystackClient,
 	queryModel *QueryModel,
@@ -165,6 +216,7 @@ func getResponse(
 
 // TestHaystackClient is a mock of the HaystackClient interface
 type testHaystackClient struct {
+	navResponse     haystack.Grid
 	evalResponse    haystack.Grid
 	hisReadResponse haystack.Grid
 	readResponse    haystack.Grid
@@ -188,6 +240,10 @@ func (c *testHaystackClient) About() (haystack.Dict, error) {
 // Ops returns an empty grid
 func (c *testHaystackClient) Ops() (haystack.Grid, error) {
 	return haystack.EmptyGrid(), nil
+}
+
+func (c *testHaystackClient) Nav(navId haystack.Val) (haystack.Grid, error) {
+	return c.navResponse, nil
 }
 
 // Eval returns the EvalResponse
