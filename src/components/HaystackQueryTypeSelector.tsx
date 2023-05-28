@@ -19,11 +19,17 @@ export function HaystackQueryTypeSelector({ datasource, type, refId, onChange }:
   function queryTypeFromValue(value: string): QueryType | null {
     return queryTypes.find((queryType) => queryType.value === value) ?? null;
   }
+
+  async function defaultQueryTypes(): Promise<QueryType[]> {
+    return new Promise<QueryType[]>((resolve) => { resolve(queryTypes);})
+  }
   
   return (
     <InlineField label="Type">
       <AsyncSelect
-        loadOptions={() => {return datasource?.loadOps(refId) ?? new Promise<QueryType[]>((resolve) => { resolve(queryTypes);})}}
+        loadOptions={() => {
+          return datasource?.loadOps(refId) ?? defaultQueryTypes();
+        }}
         defaultOptions
         value={queryTypeFromValue(type)}
         width={30}

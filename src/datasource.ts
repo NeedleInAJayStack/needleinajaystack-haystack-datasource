@@ -11,7 +11,15 @@ import {
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
-import { HaystackQuery, HaystackDataSourceOptions, DEFAULT_QUERY, HaystackVariableQuery, QueryType } from './types';
+import {
+  HaystackQuery,
+  OpsQuery,
+  HaystackDataSourceOptions,
+  DEFAULT_QUERY,
+  HaystackVariableQuery,
+  QueryType,
+} from './types';
+import { firstValueFrom } from 'rxjs';
 
 export const queryTypes: QueryType[] = [
   { label: 'Read', value: 'read', apiRequirements: ['read'], description: 'Read the records matched by a filter' },
@@ -25,51 +33,39 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
   }
 
   // Queries the available ops from the datasource and returns the queryTypes that are supported.
-  loadOps(refId: string): Promise<QueryType[]> {
-    let opsRequest: DataQueryRequest<HaystackQuery> = {
-      requestId: 'ops',
-      dashboardId: 0,
-      interval: '0',
-      intervalMs: 0,
-      panelId: 0,
-      range: getDefaultTimeRange(),
-      scopedVars: {},
-      targets: [{ type: 'ops', eval: '', read: '', hisRead: '', refId: refId }],
-      timezone: 'UTC',
-      app: 'ops',
-      startTime: 0,
-    };
-    return this.query(opsRequest)
-      .toPromise()
-      .then((result) => {
-        if (result?.state === 'Error') {
-          return [];
-        }
-        let frame = result?.data?.find((frame: DataFrame) => {
-          return frame.refId === refId;
-        });
-        let opSymbols =
-          frame?.fields?.find((field: Field<any, Vector<string>>) => {
-            return field.name === 'def';
-          }).values ?? [];
-        let ops: string[] = opSymbols.map((opSymbol: string) => {
-          if (opSymbol.startsWith('^op:')) {
-            return opSymbol.substring(4);
-          } else {
-            return opSymbol;
-          }
-        });
+  async loadOps(refId: string): Promise<QueryType[]> {
+    let opsRequest = this.opsRequest(refId);
+    let stream = this.query(opsRequest);
+    let result = await firstValueFrom(stream);
+    if (result?.state === 'Error') {
+      return [];
+    }
+    let frame = result?.data?.find((frame: DataFrame) => {
+      return frame.refId === refId;
+    });
+    let opSymbols =
+      frame?.fields?.find((field: Field<any, Vector<string>>) => {
+        return field.name === 'def';
+      }).values ?? [];
+    let ops: string[] = opSymbols.map((opSymbol: string) => {
+      if (opSymbol.startsWith('^op:')) {
+        return opSymbol.substring(4);
+      } else {
+        return opSymbol;
+      }
+    });
 
-        return queryTypes.filter((queryType) => {
-          return queryType.apiRequirements.every((apiRequirement) => {
-            return (
-              ops.find((op) => {
-                return op === apiRequirement;
-              }) !== undefined
-            );
-          });
-        });
+    let availableQueryTypes = queryTypes.filter((queryType) => {
+      return queryType.apiRequirements.every((apiRequirement) => {
+        return (
+          ops.find((op) => {
+            return op === apiRequirement;
+          }) !== undefined
+        );
       });
+    });
+
+    return availableQueryTypes;
   }
 
   applyTemplateVariables(query: HaystackQuery, scopedVars: ScopedVars): Record<string, any> {
@@ -114,5 +110,23 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
 
   getDefaultQuery(_: CoreApp): Partial<HaystackQuery> {
     return DEFAULT_QUERY;
+  }
+
+  // Returns a DataQueryRequest that gets the available ops from the datasource
+  // This applies a bunch of defaults because it's not a time series query
+  private opsRequest(refId: string): DataQueryRequest<HaystackQuery> {
+    return {
+      requestId: 'ops',
+      dashboardId: 0,
+      interval: '0',
+      intervalMs: 0,
+      panelId: 0,
+      range: getDefaultTimeRange(),
+      scopedVars: {},
+      targets: [new OpsQuery(refId)],
+      timezone: 'UTC',
+      app: 'ops',
+      startTime: 0,
+    };
   }
 }
