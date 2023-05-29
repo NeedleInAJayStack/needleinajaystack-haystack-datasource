@@ -5,12 +5,14 @@ This is a [Grafana](https://grafana.com/grafana/) plugin that supports direct co
 and supports standard Haystack API operations as well as custom Axon execution, which is supported by
 [SkySpark](https://skyfoundry.com/product) and [Haxall](https://haxall.io/).
 
+You can find more information on the
+[Haystack Grafana Plugin Page](https://grafana.com/grafana/plugins/needleinajaystack-haystack-datasource/)
+
 ![Dashboard Example](src/img/screenshot/dashboard.png)
 
 ## Installation
 
-Long term, the goal is to get this into the Grafana plugin repository. Until then, I must manually sign the plugin
-for your particular Grafana URL. If interested, please contact me at NeedleInAJayStack@protonmail.com.
+This data source plugin may be installed within the Grafana "Connect data" UI on compliant versions.  
 
 ## Usage
 
@@ -22,7 +24,3 @@ the instructions in the [plugin readme](./src/README.md)
 Contributions are very welcome! For details on how to develop this plugin, see the
 [development guide](./DEVELOPMENT_GUIDE.md).
 
-## Continuing Work
-
-- [ ] Publish plugin
-- [ ] Consider enabling multi-point hisRead (through filters)
