@@ -18,6 +18,7 @@ import {
   DEFAULT_QUERY,
   HaystackVariableQuery,
   QueryType,
+  NavQuery,
 } from './types';
 import { firstValueFrom } from 'rxjs';
 
@@ -30,6 +31,28 @@ export const queryTypes: QueryType[] = [
 export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<HaystackDataSourceOptions>) {
     super(instanceSettings);
+  }
+
+  async nav(nav: string | undefined, refId: string): Promise<string[]> {
+    let navRequest = this.navRequest(nav, refId);
+    let stream = this.query(navRequest);
+    let result = await firstValueFrom(stream);
+    if (result?.state === 'Error') {
+      return [];
+    }
+
+    let frame: DataFrame | undefined = result?.data?.find((frame: DataFrame) => {
+      return frame.refId === refId;
+    });
+
+    let idValues: string[] =
+      frame?.fields
+        ?.find((field: Field<any, Vector<string>>) => {
+          return field.name === 'id';
+        })
+        ?.values.toArray() ?? [];
+
+    return idValues;
   }
 
   // Queries the available ops from the datasource and returns the queryTypes that are supported.
@@ -124,6 +147,24 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       range: getDefaultTimeRange(),
       scopedVars: {},
       targets: [new OpsQuery(refId)],
+      timezone: 'UTC',
+      app: 'ops',
+      startTime: 0,
+    };
+  }
+
+  // Returns a DataQueryRequest that performs a nav query
+  // This applies a bunch of defaults because it's not a time series query
+  private navRequest(nav: string | undefined, refId: string): DataQueryRequest<HaystackQuery> {
+    return {
+      requestId: 'nav',
+      dashboardId: 0,
+      interval: '0',
+      intervalMs: 0,
+      panelId: 0,
+      range: getDefaultTimeRange(),
+      scopedVars: {},
+      targets: [new NavQuery(nav, refId)],
       timezone: 'UTC',
       app: 'ops',
       startTime: 0,

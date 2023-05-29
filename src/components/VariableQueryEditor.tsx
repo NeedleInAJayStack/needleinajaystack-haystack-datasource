@@ -68,6 +68,7 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
         onChange={onTypeChange}
       />
       <HaystackQueryInput
+        datasource={null}
         query={state.query ?? blankQuery}
         onChange={onQueryChange}
       />

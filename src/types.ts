@@ -2,6 +2,7 @@ import { DataQuery, DataSourceJsonData, SelectableValue } from '@grafana/data';
 
 export interface HaystackQuery extends DataQuery {
   type: string; // Defines the type of query that should be executed
+  nav: string | undefined;
   eval: string;
   hisRead: string;
   read: string;
@@ -13,10 +14,27 @@ export class OpsQuery implements HaystackQuery {
   eval = '';
   hisRead = '';
   read = '';
+  nav = '';
 
   refId: string;
 
   constructor(refId: string) {
+    this.refId = refId;
+  }
+}
+
+// NavQuery is a query that is used to get the available ops from the datasource.
+export class NavQuery implements HaystackQuery {
+  type = 'nav';
+  eval = '';
+  hisRead = '';
+  read = '';
+
+  nav: string | undefined;
+  refId: string;
+
+  constructor(nav: string | undefined, refId: string) {
+    this.nav = nav;
     this.refId = refId;
   }
 }

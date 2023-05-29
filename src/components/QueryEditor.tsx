@@ -40,6 +40,7 @@ export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) 
                 onChange={onTypeChange}
               />
               <HaystackQueryInput
+                datasource={datasource}
                 query={query}
                 onChange={onQueryChange}
               />
