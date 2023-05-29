@@ -7,6 +7,20 @@ export interface HaystackQuery extends DataQuery {
   read: string;
 }
 
+// OpsQuery is a query that is used to get the available ops from the datasource.
+export class OpsQuery implements HaystackQuery {
+  type = 'ops';
+  eval = '';
+  hisRead = '';
+  read = '';
+
+  refId: string;
+
+  constructor(refId: string) {
+    this.refId = refId;
+  }
+}
+
 export interface QueryType extends SelectableValue<string> {
   apiRequirements: string[];
 }

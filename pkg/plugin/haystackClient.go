@@ -13,4 +13,5 @@ type HaystackClient interface {
 	Eval(string) (haystack.Grid, error)
 	HisReadAbsDateTime(haystack.Ref, haystack.DateTime, haystack.DateTime) (haystack.Grid, error)
 	Read(string) (haystack.Grid, error)
+	Nav(haystack.Val) (haystack.Grid, error)
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/NeedleInAJayStack/haystack"
 	"github.com/NeedleInAJayStack/haystack/client"
+	"github.com/NeedleInAJayStack/haystack/io"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -43,7 +44,6 @@ func NewDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.In
 	// settings contains secure inputs in .DecryptedSecureJSONData in a string:string map
 	password := settings.DecryptedSecureJSONData["password"]
 
-	// client := haystack.NewClient("http://host.docker.internal:8080/api/", "su", "5gXYG16s9gDLlyS2gNko")
 	client := client.NewClient(url, username, password)
 	openErr := client.Open()
 	if openErr != nil {
@@ -96,10 +96,11 @@ func (datasource *Datasource) QueryData(ctx context.Context, req *backend.QueryD
 }
 
 type QueryModel struct {
-	Type    string `json:"type"`
-	Eval    string `json:"eval"`
-	HisRead string `json:"hisRead"`
-	Read    string `json:"read"`
+	Type    string  `json:"type"`
+	Nav     *string `json:"nav"` // A zinc-encoded Ref or null
+	Eval    string  `json:"eval"`
+	HisRead string  `json:"hisRead"`
+	Read    string  `json:"read"`
 }
 
 func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
@@ -130,6 +131,13 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Ops failure: %v", err.Error()))
 		}
 		grid = ops
+	case "nav":
+		nav, err := datasource.nav(model.Nav)
+		if err != nil {
+			log.DefaultLogger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Nav failure: %v", err.Error()))
+		}
+		grid = nav
 	case "eval":
 		eval, err := datasource.eval(model.Eval, variables)
 		if err != nil {
@@ -232,6 +240,27 @@ func (datasource *Datasource) read(filter string, variables map[string]string) (
 	return datasource.withRetry(
 		func() (haystack.Grid, error) {
 			return datasource.client.Read(filter)
+		},
+	)
+}
+
+// nav returns the grid for the given navId, or the root nav if navId is nil
+// `navId` is expected to be a zinc-encoded Ref
+func (datasource *Datasource) nav(navId *string) (haystack.Grid, error) {
+	return datasource.withRetry(
+		func() (haystack.Grid, error) {
+			if navId != nil {
+				zincReader := io.ZincReader{}
+				zincReader.InitString(*navId)
+				val, err := zincReader.ReadVal()
+				if err != nil {
+					return haystack.EmptyGrid(), err
+				}
+				ref := val.(haystack.Ref)
+				return datasource.client.Nav(ref)
+			} else {
+				return datasource.client.Nav(haystack.NewNull())
+			}
 		},
 	)
 }
