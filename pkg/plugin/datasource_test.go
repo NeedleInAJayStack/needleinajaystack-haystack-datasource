@@ -66,7 +66,7 @@ func TestQueryData_HisRead(t *testing.T) {
 	v0Val := 5.0
 	expected := data.NewFrame("",
 		data.NewField("ts", nil, []*time.Time{&tsVal}).SetConfig(&data.FieldConfig{DisplayName: "ts"}),
-		data.NewField("v0", nil, []*float64{&v0Val}).SetConfig(&data.FieldConfig{DisplayName: "v0"}),
+		data.NewField("v0", nil, []*float64{&v0Val}).SetConfig(&data.FieldConfig{DisplayName: "v0", Unit: "kWh"}),
 	)
 
 	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
