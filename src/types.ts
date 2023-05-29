@@ -4,6 +4,7 @@ export interface HaystackQuery extends DataQuery {
   type: string; // Defines the type of query that should be executed
   eval: string;
   hisRead: string;
+  hisReadFilter: string;
   read: string;
 }
 
@@ -12,6 +13,7 @@ export class OpsQuery implements HaystackQuery {
   type = 'ops';
   eval = '';
   hisRead = '';
+  hisReadFilter = '';
   read = '';
 
   refId: string;
@@ -34,7 +36,8 @@ export const DEFAULT_QUERY: Partial<HaystackQuery> = {
   type: 'eval',
   eval: '[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid',
   hisRead: 'abcdef-123456',
-  read: 'point and temp and air and outside',
+  hisReadFilter: 'point and his and temp and air and outside',
+  read: 'equip and ahu',
 };
 
 /**

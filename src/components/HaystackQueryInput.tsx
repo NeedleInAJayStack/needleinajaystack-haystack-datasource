@@ -38,6 +38,18 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
           />
         </InlineField>
       );
+    case "hisReadFilter":
+      return (
+        <InlineField>
+          <Input
+            width={width}
+            prefix={<Icon name="filter" />}
+            onChange={onQueryChange}
+            value={query.hisReadFilter}
+            placeholder={DEFAULT_QUERY.hisReadFilter}
+          />
+        </InlineField>
+      );
     case "read":
       return (
         <InlineField>
