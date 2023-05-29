@@ -45,6 +45,9 @@ achieved with the following steps:
 
 1. Run `npm version <major|minor|patch>`
 2. Run `git push origin main --follow-tags`
+3. Navigate to the GitHub releases page, and follow the instructions in the new draft release.
+4. Before submitting the plugin in Grafana Cloud, edit the release and make it public.
+5. Submit the plugin
 
 ---
 
