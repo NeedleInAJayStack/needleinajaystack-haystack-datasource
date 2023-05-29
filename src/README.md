@@ -24,7 +24,8 @@ Haystack query that should be performed. The supported queries are:
 
 - Eval: Evaluate a free-form Axon expression. _Note: Not all Haystack servers support this functionality_
 - HisRead: Display the history of a single point over the selected time range.
-- Read: Display the records matching a filter. Since this is not timeseries data, it can only be viewed in Grafana's
+- HisRead via filter: Read multiple points using a filter, and display their histories over the selected time range.
+- Read: Display the records matching a filter. Since this is not timeseries data, it is best viewed in Grafana's
   "Table" view.
 
 #### Variable Usage

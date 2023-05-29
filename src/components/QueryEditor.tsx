@@ -13,10 +13,12 @@ export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) 
     onChange({ ...query, type: newType });
   };
   const onQueryChange = (newQuery: string) => {
-    if (query.type === "hisRead") {
-      onChange({ ...query, hisRead: newQuery });
-    } else if (query.type === "eval") {
+    if (query.type === "eval") {
       onChange({ ...query, eval: newQuery });
+    } else if (query.type === "hisRead") {
+      onChange({ ...query, hisRead: newQuery });
+    } else if (query.type === "hisReadFilter") {
+      onChange({ ...query, hisReadFilter: newQuery });
     } else if (query.type === "read") {
       onChange({ ...query, read: newQuery });
     }

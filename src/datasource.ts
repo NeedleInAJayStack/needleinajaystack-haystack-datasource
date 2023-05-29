@@ -22,9 +22,15 @@ import {
 import { firstValueFrom } from 'rxjs';
 
 export const queryTypes: QueryType[] = [
-  { label: 'Read', value: 'read', apiRequirements: ['read'], description: 'Read the records matched by a filter' },
-  { label: 'HisRead', value: 'hisRead', apiRequirements: ['hisRead'], description: 'Read the history of a point' },
   { label: 'Eval', value: 'eval', apiRequirements: ['eval'], description: 'Evaluate an Axon expression' },
+  { label: 'HisRead', value: 'hisRead', apiRequirements: ['hisRead'], description: 'Read the history of a point' },
+  {
+    label: 'HisRead via filter',
+    value: 'hisReadFilter',
+    apiRequirements: ['read', 'hisRead'],
+    description: 'Read the history of points found using a filter',
+  },
+  { label: 'Read', value: 'read', apiRequirements: ['read'], description: 'Read the records matched by a filter' },
 ];
 
 export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDataSourceOptions> {

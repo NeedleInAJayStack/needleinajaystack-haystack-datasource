@@ -96,16 +96,15 @@ func (datasource *Datasource) QueryData(ctx context.Context, req *backend.QueryD
 }
 
 type QueryModel struct {
-	Type    string  `json:"type"`
-	Nav     *string `json:"nav"` // A zinc-encoded Ref or null
-	Eval    string  `json:"eval"`
-	HisRead string  `json:"hisRead"`
-	Read    string  `json:"read"`
+	Type          string  `json:"type"`
+	Nav           *string `json:"nav"` // A zinc-encoded Ref or null
+	Eval          string  `json:"eval"`
+	HisRead       string  `json:"hisRead"`
+	HisReadFilter string  `json:"hisReadFilter"`
+	Read          string  `json:"read"`
 }
 
 func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
-	var response backend.DataResponse
-
 	// Unmarshal the JSON into our queryModel.
 	var model QueryModel
 
@@ -122,58 +121,92 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		"$__interval":        haystack.NewNumber(query.Interval.Minutes(), "min").ToZinc(),
 	}
 
-	var grid haystack.Grid
 	switch model.Type {
+	case "":
+		// If no type is specified, just return an empty response.
+		return responseFromGrids([]haystack.Grid{})
 	case "ops":
 		ops, err := datasource.ops()
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Ops failure: %v", err.Error()))
 		}
-		grid = ops
+		return responseFromGrids([]haystack.Grid{ops})
 	case "nav":
 		nav, err := datasource.nav(model.Nav)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Nav failure: %v", err.Error()))
 		}
-		grid = nav
+		return responseFromGrids([]haystack.Grid{nav})
 	case "eval":
 		eval, err := datasource.eval(model.Eval, variables)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Eval failure: %v", err.Error()))
 		}
-		grid = eval
+		return responseFromGrids([]haystack.Grid{eval})
 	case "hisRead":
-		hisRead, err := datasource.hisRead(model.HisRead, query.TimeRange)
+		hisRead, err := datasource.hisRead(haystack.NewRef(model.HisRead, ""), query.TimeRange)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisRead failure: %v", err.Error()))
 		}
-		grid = hisRead
+		return responseFromGrids([]haystack.Grid{hisRead})
+	case "hisReadFilter":
+		points, readErr := datasource.read(model.HisReadFilter, variables)
+		if readErr != nil {
+			log.DefaultLogger.Error(readErr.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisReadFilter failure: %v", readErr.Error()))
+		}
+
+		grids := []haystack.Grid{}
+		for _, point := range points.Rows() {
+			id := point.Get("id")
+			var ref haystack.Ref
+			switch id.(type) {
+			case haystack.Ref:
+				ref = id.(haystack.Ref)
+			default:
+				errMsg := fmt.Sprintf("id is not a ref: %v", id)
+				log.DefaultLogger.Error(errMsg)
+				return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
+			}
+			hisRead, err := datasource.hisRead(ref, query.TimeRange)
+			if err != nil {
+				log.DefaultLogger.Error(err.Error())
+				return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisReadFilter failure: %v", err.Error()))
+			}
+			grids = append(grids, hisRead)
+		}
+		return responseFromGrids(grids)
 	case "read":
 		read, err := datasource.read(model.Read, variables)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Read failure: %v", err.Error()))
 		}
-		grid = read
+		return responseFromGrids([]haystack.Grid{read})
 	default:
-		log.DefaultLogger.Warn("No valid input, returning empty Grid")
-		grid = haystack.EmptyGrid()
+		warnMsg := fmt.Sprintf("Invalid type %s, returning empty Grid", model.Type)
+		log.DefaultLogger.Warn(warnMsg)
+		return backend.ErrDataResponse(backend.StatusBadRequest, warnMsg)
 	}
+}
 
-	frame, frameErr := dataFrameFromGrid(grid)
-	if frameErr != nil {
-		log.DefaultLogger.Error(frameErr.Error())
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Frame conversion failure: %v", frameErr.Error()))
+func responseFromGrids(grids []haystack.Grid) backend.DataResponse {
+	var response backend.DataResponse
+	for _, grid := range grids {
+		frame, frameErr := dataFrameFromGrid(grid)
+		if frameErr != nil {
+			log.DefaultLogger.Error(frameErr.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Frame conversion failure: %v", frameErr.Error()))
+		}
+
+		// add the frames to the response.
+		response.Frames = append(response.Frames, frame)
+		response.Status = backend.StatusOK
 	}
-
-	// add the frames to the response.
-	response.Frames = append(response.Frames, frame)
-	response.Status = backend.StatusOK
-
 	return response
 }
 
@@ -220,14 +253,13 @@ func (datasource *Datasource) eval(expr string, variables map[string]string) (ha
 	)
 }
 
-func (datasource *Datasource) hisRead(id string, timeRange backend.TimeRange) (haystack.Grid, error) {
-	ref := haystack.NewRef(id, "")
+func (datasource *Datasource) hisRead(id haystack.Ref, timeRange backend.TimeRange) (haystack.Grid, error) {
 	start := haystack.NewDateTimeFromGo(timeRange.From.UTC())
 	end := haystack.NewDateTimeFromGo(timeRange.To.UTC())
 
 	return datasource.withRetry(
 		func() (haystack.Grid, error) {
-			return datasource.client.HisReadAbsDateTime(ref, start, end)
+			return datasource.client.HisReadAbsDateTime(id, start, end)
 		},
 	)
 }
