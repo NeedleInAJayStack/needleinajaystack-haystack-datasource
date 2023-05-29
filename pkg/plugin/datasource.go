@@ -421,14 +421,8 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 		// Set Grafana field info from Haystack grid info
 		config := &data.FieldConfig{}
 		config.DisplayName = col.Name()
-		switch unit := col.Meta().Get("unit").(type) {
-		case haystack.Str:
-			config.Unit = unit.String()
-		default:
-			config.Unit = ""
-		}
+		config.Unit = unitFromGrid(grid, col)
 		field.Config = config
-
 		fields = append(fields, field)
 	}
 
@@ -441,6 +435,29 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 		frame.Name = ""
 	}
 	return frame, nil
+}
+
+// unitFromGrid returns the unit of a column in a haystack grid
+// It is expected that the column is from the grid
+// The unit is determined in the following order:
+// 1. If the column has a unit meta, return it
+// 2. If the column has a unit in the first row, return it
+// 3. Return empty string
+func unitFromGrid(grid haystack.Grid, col haystack.Col) string {
+	switch unit := col.Meta().Get("unit").(type) {
+	case haystack.Str:
+		return unit.String()
+	default:
+		if grid.RowCount() >= 1 {
+			row := grid.RowAt(0)
+			val := row.Get(col.Name())
+			switch val := val.(type) {
+			case haystack.Number:
+				return val.Unit()
+			}
+		}
+		return ""
+	}
 }
 
 type colType int
