@@ -434,13 +434,12 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 
 	frame := data.NewFrame("response", fields...)
 
-	switch dis := grid.Meta().Get("dis").(type) {
-	case haystack.Str:
-		frame.Name = dis.String()
+	switch id := grid.Meta().Get("id").(type) {
+	case haystack.Ref:
+		frame.Name = id.Dis()
 	default:
 		frame.Name = ""
 	}
-
 	return frame, nil
 }
 
