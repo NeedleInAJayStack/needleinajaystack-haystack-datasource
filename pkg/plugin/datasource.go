@@ -152,7 +152,17 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisRead failure: %v", err.Error()))
 		}
-		return responseFromGrids([]haystack.Grid{hisRead})
+		response := responseFromGrids([]haystack.Grid{hisRead})
+		// Make the display name on the "val" field the name of the point.
+		for _, frame := range response.Frames {
+			for _, field := range frame.Fields {
+				if field.Name == "val" {
+					field.Config.DisplayName = frame.Name
+				}
+			}
+		}
+		return response
+
 	case "hisReadFilter":
 		points, readErr := datasource.read(model.HisReadFilter, variables)
 		if readErr != nil {
@@ -179,7 +189,16 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 			}
 			grids = append(grids, hisRead)
 		}
-		return responseFromGrids(grids)
+		response := responseFromGrids(grids)
+		// Make the display name on the "val" fields the names of the points.
+		for _, frame := range response.Frames {
+			for _, field := range frame.Fields {
+				if field.Name == "val" {
+					field.Config.DisplayName = frame.Name
+				}
+			}
+		}
+		return response
 	case "read":
 		read, err := datasource.read(model.Read, variables)
 		if err != nil {
