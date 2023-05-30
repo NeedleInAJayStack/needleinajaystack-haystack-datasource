@@ -79,6 +79,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       ...query,
       eval: getTemplateSrv().replace(query.eval, scopedVars, 'csv'),
       hisRead: getTemplateSrv().replace(query.hisRead, scopedVars, 'csv'),
+      hisReadFilter: getTemplateSrv().replace(query.hisReadFilter, scopedVars, 'csv'),
       read: getTemplateSrv().replace(query.read, scopedVars, 'csv'),
     };
   }
