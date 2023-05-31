@@ -43,11 +43,12 @@ Otherwise, nearly every Axon query can be visualized using the table view.
 To trigger a new release of the plugin, we need to push a version tag to github. This can be
 achieved with the following steps:
 
+1. Fill out changelog and merge
 1. Run `npm version <major|minor|patch>`
-2. Run `git push origin main --follow-tags`
-3. Navigate to the GitHub releases page, and follow the instructions in the new draft release.
-4. Before submitting the plugin in Grafana Cloud, edit the release and make it public.
-5. Submit the plugin
+1. Run `git push origin main --follow-tags`
+1. Navigate to the GitHub releases page, and follow the instructions in the new draft release.
+1. Before submitting the plugin in Grafana Cloud, edit the release and make it public.
+1. Submit the plugin
 
 ---
 
