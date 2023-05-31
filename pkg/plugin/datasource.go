@@ -166,7 +166,7 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		return response
 
 	case "hisReadFilter":
-		pointsGrid, readErr := datasource.read(model.HisReadFilter, variables)
+		pointsGrid, readErr := datasource.read(model.HisReadFilter+" and hisStart", variables)
 		if readErr != nil {
 			log.DefaultLogger.Error(readErr.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisReadFilter failure: %v", readErr.Error()))
