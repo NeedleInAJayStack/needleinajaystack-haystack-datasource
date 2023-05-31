@@ -172,6 +172,12 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisReadFilter failure: %v", readErr.Error()))
 		}
 		points := pointsGrid.Rows()
+		recLimit := 300
+		if len(points) > recLimit {
+			errMsg := fmt.Sprintf("Query exceeded record limit of %d: %d records", recLimit, len(points))
+			log.DefaultLogger.Error(errMsg)
+			return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
+		}
 
 		// Function to read a single point and send it to a channel.
 		readPoint := func(point haystack.Row, hisReadChannel chan haystack.Grid, wg *sync.WaitGroup) {
