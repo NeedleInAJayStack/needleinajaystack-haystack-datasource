@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -238,19 +239,25 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 	}
 }
 
+// Creates a response from the input grids. The frames in the result are sorted by display name.
 func responseFromGrids(grids []haystack.Grid) backend.DataResponse {
-	var response backend.DataResponse
+	frames := data.Frames{}
 	for _, grid := range grids {
 		frame, frameErr := dataFrameFromGrid(grid)
 		if frameErr != nil {
 			log.DefaultLogger.Error(frameErr.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Frame conversion failure: %v", frameErr.Error()))
 		}
-
-		// add the frames to the response.
-		response.Frames = append(response.Frames, frame)
-		response.Status = backend.StatusOK
+		frames = append(frames, frame)
 	}
+
+	sort.Slice(frames, func(i, j int) bool {
+		return frames[i].Name < frames[j].Name
+	})
+
+	var response backend.DataResponse
+	response.Frames = frames
+	response.Status = backend.StatusOK
 	return response
 }
 
