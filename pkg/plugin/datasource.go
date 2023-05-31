@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NeedleInAJayStack/haystack"
@@ -164,14 +165,15 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		return response
 
 	case "hisReadFilter":
-		points, readErr := datasource.read(model.HisReadFilter, variables)
+		pointsGrid, readErr := datasource.read(model.HisReadFilter, variables)
 		if readErr != nil {
 			log.DefaultLogger.Error(readErr.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisReadFilter failure: %v", readErr.Error()))
 		}
+		points := pointsGrid.Rows()
 
-		grids := []haystack.Grid{}
-		for _, point := range points.Rows() {
+		// Function to read a single point and send it to a channel.
+		readPoint := func(point haystack.Row, hisReadChannel chan haystack.Grid, wg *sync.WaitGroup) {
 			id := point.Get("id")
 			var ref haystack.Ref
 			switch id.(type) {
@@ -180,15 +182,38 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 			default:
 				errMsg := fmt.Sprintf("id is not a ref: %v", id)
 				log.DefaultLogger.Error(errMsg)
-				return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
+				hisReadChannel <- haystack.EmptyGrid()
 			}
 			hisRead, err := datasource.hisRead(ref, query.TimeRange)
 			if err != nil {
 				log.DefaultLogger.Error(err.Error())
-				return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisReadFilter failure: %v", err.Error()))
+				hisReadChannel <- haystack.EmptyGrid()
 			}
-			grids = append(grids, hisRead)
+			hisReadChannel <- hisRead
+			wg.Done()
 		}
+
+		// Start a goroutine to collect all the grids into a slice.
+		hisReadChannel := make(chan haystack.Grid)
+		combinedChannel := make(chan []haystack.Grid)
+		go func() {
+			grids := []haystack.Grid{}
+			for grid := range hisReadChannel {
+				grids = append(grids, grid)
+			}
+			combinedChannel <- grids
+		}()
+
+		// Read all the points in parallel using goroutines.
+		var wg sync.WaitGroup
+		wg.Add(len(points))
+		for _, point := range points {
+			go readPoint(point, hisReadChannel, &wg)
+		}
+		wg.Wait()
+		close(hisReadChannel)
+
+		grids := <-combinedChannel
 		response := responseFromGrids(grids)
 		// Make the display name on the "val" fields the names of the points.
 		for _, frame := range response.Frames {
