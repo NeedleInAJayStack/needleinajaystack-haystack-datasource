@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.11
+Minor documentation updates
+
 ## 0.0.10
 
 - Adds a `HisRead with Filter` query type that allows filtering and performing multiple hisReads in one step.
