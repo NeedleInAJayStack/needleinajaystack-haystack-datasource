@@ -20,8 +20,12 @@
     "links": [],
     "screenshots": [
       {
-        "name": "Dashboard",
-        "path": "img/screenshot/dashboard.png"
+        "name": "Dashboard 1",
+        "path": "img/screenshot/dashboard_1.png"
+      },
+      {
+        "name": "Dashboard 2",
+        "path": "img/screenshot/dashboard_2.png"
       },
       {
         "name": "Query Editor",

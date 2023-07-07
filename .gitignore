@@ -36,3 +36,6 @@ pkg/.env
 
 # Private plugin releases
 release/
+
+# MacOS artifacts
+.DS_Store
