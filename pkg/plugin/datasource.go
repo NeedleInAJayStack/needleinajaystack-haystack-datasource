@@ -477,7 +477,7 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 
 		// Set Grafana field info from Haystack grid info
 		config := &data.FieldConfig{}
-		config.DisplayName = col.Name()
+		config.DisplayName = disFromGrid(grid, col)
 		config.Unit = unitFromGrid(grid, col)
 		field.Config = config
 		fields = append(fields, field)
@@ -492,6 +492,21 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 		frame.Name = ""
 	}
 	return frame, nil
+}
+
+// disFromGrid returns the display name of a column in a haystack grid
+func disFromGrid(grid haystack.Grid, col haystack.Col) string {
+	// If column has 'id' meta, use the Ref name
+	id := col.Meta().Get("id")
+	if id != nil {
+		switch id := id.(type) {
+		case haystack.Ref:
+			return id.Dis()
+		default:
+			return col.Name()
+		}
+	}
+	return col.Name()
 }
 
 // unitFromGrid returns the unit of a column in a haystack grid

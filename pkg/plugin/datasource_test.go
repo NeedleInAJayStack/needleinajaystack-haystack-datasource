@@ -43,6 +43,34 @@ func TestQueryData_Eval(t *testing.T) {
 	}
 }
 
+func TestQueryData_Eval_Dis(t *testing.T) {
+	response := haystack.NewGridBuilder()
+	response.AddCol("a", map[string]haystack.Val{"id": haystack.NewRef("abc", "dis")})
+	response.AddRow([]haystack.Val{haystack.NewStr("a")})
+
+	client := &testHaystackClient{
+		evalResponse: response.ToGrid(),
+	}
+
+	actual := getResponse(
+		client,
+		&QueryModel{
+			Type: "eval",
+			Eval: "test()",
+		},
+		t,
+	)
+
+	aVal := "a"
+	expected := data.NewFrame("",
+		data.NewField("a", nil, []*string{&aVal}).SetConfig(&data.FieldConfig{DisplayName: "dis"}),
+	)
+
+	if !cmp.Equal(actual, expected, data.FrameTestCompareOptions()...) {
+		t.Error(cmp.Diff(actual, expected, data.FrameTestCompareOptions()...))
+	}
+}
+
 func TestQueryData_HisRead(t *testing.T) {
 	response := haystack.NewGridBuilder()
 	response.AddCol("ts", map[string]haystack.Val{})
