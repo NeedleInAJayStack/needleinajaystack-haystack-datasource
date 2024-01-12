@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.12
+Sets Grafana field display name to column meta `ID` display name, if present.
+
 ## 0.0.11
 Minor documentation updates
 
