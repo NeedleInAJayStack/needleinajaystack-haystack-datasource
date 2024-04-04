@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.14
+Upgrades to haystack v0.1.12 to add basic auth client support.
+
 ## 0.0.12
 Sets Grafana field display name to column meta `ID` display name, if present.
 
