@@ -1,11 +1,11 @@
 module github.com/NeedleInAJayStack/haystack-datasource
 
-go 1.19
+go 1.21
 
 require github.com/grafana/grafana-plugin-sdk-go v0.159.0
 
 require (
-	github.com/NeedleInAJayStack/haystack v0.1.12
+	github.com/NeedleInAJayStack/haystack v0.1.11
 	github.com/google/go-cmp v0.5.9
 )
 
