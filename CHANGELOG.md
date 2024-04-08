@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.15
+Fixes haystack v0.1.12 upgrade.
+
 ## 0.0.14
 Upgrades to haystack v0.1.12 to add basic auth client support.
 
