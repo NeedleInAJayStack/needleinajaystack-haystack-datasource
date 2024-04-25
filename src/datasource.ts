@@ -49,17 +49,29 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
     let frame = result?.data?.find((frame: DataFrame) => {
       return frame.refId === refId;
     });
-    let opSymbols =
-      frame?.fields?.find((field: Field<any, Vector<string>>) => {
-        return field.name === 'def';
-      }).values ?? [];
-    let ops: string[] = opSymbols.map((opSymbol: string) => {
-      if (opSymbol.startsWith('^op:')) {
-        return opSymbol.substring(4);
-      } else {
-        return opSymbol;
+
+    let ops: string[] = []
+    
+    let defField = frame?.fields?.find((field: Field<any, Vector<string>>) => {
+      return field.name === 'def';
+    })
+    if (defField != null) {
+      ops = defField.values.map((opSymbol: string) => {
+        if (opSymbol.startsWith('^op:')) {
+          return opSymbol.substring(4);
+        } else {
+          return opSymbol;
+        }
+      });
+    } else {
+      // Include back-support for old `ops` format, which uses "name", not "defs". Used by nhaystack
+      let nameField = frame?.fields?.find((field: Field<any, Vector<string>>) => {
+        return field.name === 'name';
+      })
+      if (nameField != null) {
+        ops = nameField.values;
       }
-    });
+    }
 
     let availableQueryTypes = queryTypes.filter((queryType) => {
       return queryType.apiRequirements.every((apiRequirement) => {
