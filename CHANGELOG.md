@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.17
+Adds full nhaystack support with basic authentication
+Improves display name detection
+Changes default query type to `read` to better support non-Axon environments
+
 ## 0.0.16
 Upgrades to haystack v0.1.13 to loosen basic auth server requirements.
 
