@@ -176,15 +176,20 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		return response
 
 	case "hisReadFilter":
-		pointsGrid, readErr := datasource.read(model.HisReadFilter+" and hisStart", variables)
+		pointsGrid, readErr := datasource.read(model.HisReadFilter+" and his", variables)
 		if readErr != nil {
 			log.DefaultLogger.Error(readErr.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisReadFilter failure: %v", readErr.Error()))
 		}
 		points := pointsGrid.Rows()
-		recLimit := 300
-		if len(points) > recLimit {
-			errMsg := fmt.Sprintf("Query exceeded record limit of %d: %d records", recLimit, len(points))
+		pointMax := 300
+		if len(points) == 0 {
+			errMsg := fmt.Sprintf("Query returned no historized records")
+			log.DefaultLogger.Error(errMsg)
+			return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
+		}
+		if len(points) > pointMax {
+			errMsg := fmt.Sprintf("Query exceeded record limit of %d: %d records", pointMax, len(points))
 			log.DefaultLogger.Error(errMsg)
 			return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
 		}
