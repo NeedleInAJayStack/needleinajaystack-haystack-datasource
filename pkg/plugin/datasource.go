@@ -511,36 +511,35 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 
 		// Set Grafana field info from Haystack grid info
 		config := &data.FieldConfig{}
-		config.DisplayName = disFromGrid(grid, col)
+		config.DisplayName = disFromMeta(col.Meta(), col.Name())
 		config.Unit = unitFromGrid(grid, col)
 		field.Config = config
 		fields = append(fields, field)
 	}
 
 	frame := data.NewFrame("response", fields...)
-
-	switch id := grid.Meta().Get("id").(type) {
-	case haystack.Ref:
-		frame.Name = id.Dis()
-	default:
-		frame.Name = ""
-	}
+	frameName := disFromMeta(grid.Meta(), "")
+	frame.Name = frameName
 	return frame, nil
 }
 
-// disFromGrid returns the display name of a column in a haystack grid
-func disFromGrid(grid haystack.Grid, col haystack.Col) string {
-	// If column has 'id' meta, use the Ref name
-	id := col.Meta().Get("id")
-	if id != nil {
-		switch id := id.(type) {
-		case haystack.Ref:
-			return id.Dis()
-		default:
-			return col.Name()
-		}
+// disFromMeta returns the display name using metadata. It falls back to the provided string if no other name can be found
+func disFromMeta(meta haystack.Dict, name string) string {
+	// Use meta 'dis'
+	colDis, success := meta.Get("dis").(haystack.Str)
+	if success {
+		return colDis.String()
 	}
-	return col.Name()
+	// Then 'id.dis' or 'id'
+	colRef, success := meta.Get("id").(haystack.Ref)
+	if success {
+		if colRef.Dis() != "" {
+			return colRef.Dis()
+		}
+		return colRef.ToZinc()
+	}
+	// Then the input name. We shouldn't get here because all records should have an
+	return name
 }
 
 // unitFromGrid returns the unit of a column in a haystack grid
