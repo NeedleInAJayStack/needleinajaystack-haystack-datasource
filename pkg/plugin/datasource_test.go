@@ -72,13 +72,19 @@ func TestQueryData_Eval_Dis(t *testing.T) {
 }
 
 func TestQueryData_HisRead(t *testing.T) {
-	response := haystack.NewGridBuilder()
-	response.AddCol("ts", map[string]haystack.Val{})
-	response.AddCol("v0", map[string]haystack.Val{})
-	response.AddRow([]haystack.Val{haystack.NewDateTimeFromGo(time.Unix(0, 0)), haystack.NewNumber(5, "kWh")})
+	readByIdsResponse := haystack.NewGridBuilder()
+	readByIdsResponse.AddCol("id", map[string]haystack.Val{})
+	readByIdsResponse.AddCol("tz", map[string]haystack.Val{})
+	readByIdsResponse.AddRow([]haystack.Val{haystack.NewRef("abcdefg-12345678", ""), haystack.NewStr("UTC")})
+
+	hisReadResponse := haystack.NewGridBuilder()
+	hisReadResponse.AddCol("ts", map[string]haystack.Val{})
+	hisReadResponse.AddCol("v0", map[string]haystack.Val{})
+	hisReadResponse.AddRow([]haystack.Val{haystack.NewDateTimeFromGo(time.Unix(0, 0)), haystack.NewNumber(5, "kWh")})
 
 	client := &testHaystackClient{
-		hisReadResponse: response.ToGrid(),
+		readByIdsResponse: readByIdsResponse.ToGrid(),
+		hisReadResponse:   hisReadResponse.ToGrid(),
 	}
 
 	actual := getResponse(
@@ -244,10 +250,11 @@ func getResponse(
 
 // TestHaystackClient is a mock of the HaystackClient interface
 type testHaystackClient struct {
-	navResponse     haystack.Grid
-	evalResponse    haystack.Grid
-	hisReadResponse haystack.Grid
-	readResponse    haystack.Grid
+	navResponse       haystack.Grid
+	evalResponse      haystack.Grid
+	hisReadResponse   haystack.Grid
+	readResponse      haystack.Grid
+	readByIdsResponse haystack.Grid
 }
 
 // Open is a no-op
@@ -287,4 +294,9 @@ func (c *testHaystackClient) HisReadAbsDateTime(ref haystack.Ref, start haystack
 // Read returns the ReadResponse
 func (c *testHaystackClient) Read(query string) (haystack.Grid, error) {
 	return c.readResponse, nil
+}
+
+// Read returns the ReadByIdsResponse
+func (c *testHaystackClient) ReadByIds(refs []haystack.Ref) (haystack.Grid, error) {
+	return c.readByIdsResponse, nil
 }

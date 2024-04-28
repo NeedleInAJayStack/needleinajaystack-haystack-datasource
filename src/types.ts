@@ -33,7 +33,7 @@ export interface HaystackVariableQuery {
 }
 
 export const DEFAULT_QUERY: Partial<HaystackQuery> = {
-  type: 'eval',
+  type: 'read',
   eval: '[{ts: $__timeRange_start, v0: 0}, {ts: $__timeRange_end, v0: 10}].toGrid',
   hisRead: 'abcdef-123456',
   hisReadFilter: 'point and his and temp and air and outside',

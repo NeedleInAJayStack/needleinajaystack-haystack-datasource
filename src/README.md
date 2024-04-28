@@ -24,7 +24,7 @@ to create a new Haystack datasource. Next, fill in the required information:
 - The root Haystack API URL. The URLs for some popular Haystack servers are listed below:
   - SkySpark: `http://<host>/api/<proj>/`
   - Haxall: `http://<host>/api/`
-  - NHaystack: `http://<host>/`
+  - NHaystack: `http://<host>/<name_of_nhaystack_service>/`
 - The username and password. It is best practice to create a dedicated user for the Grafana integration.
 
 Once complete, select `Save & Test`. If you get a green check mark, the connection was successful!
@@ -76,6 +76,18 @@ are combined with commas, (`red,blue`), but this may be customized using the
 ### Alerting
 
 [Standard grafana alerting](https://grafana.com/docs/grafana/latest/alerting/) is supported by this data source.
+
+## Haystack Server Configuration
+
+### NHaystack
+
+Follow the setup instructions in the [`nhaystack` README](https://github.com/ci-richard-mcelhinney/nhaystack#usage).
+
+Currently only `Basic Auth` connectivity to `nhaystack` is supported. Basic auth should only be enabled when Niagara web traffic is encrypted using HTTPS.
+
+To add basic auth support, click and drag `baja/AuthenticationSchemes/WebServicesSchemes/HTTPBasicScheme` from the Palette to `Config/AuthenticationService/AuthenticationSchemes/` in the Nav pane. Then go to `Config/UserService/` in the Nav pane, create a user, and set the `Authentication Scheme Name` slot to `HTTPBasicScheme`. The user must also have an `Admin` role in order to access nhaystack endpoints.
+
+The root Haystack API URL is dependent on the name given to the nhaystack service: `http://<host>/<name_of_nhaystack_service>/`. This service name defaults to `haystack`, so unless renamed the URL is `http://<host>/haystack/`.
 
 ## Support
 

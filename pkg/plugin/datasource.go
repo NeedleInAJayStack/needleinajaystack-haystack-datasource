@@ -149,7 +149,17 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		}
 		return responseFromGrids([]haystack.Grid{eval})
 	case "hisRead":
-		hisRead, err := datasource.hisRead(haystack.NewRef(model.HisRead, ""), query.TimeRange)
+		refStr := model.HisRead
+		points, err := datasource.readById(refStr, variables)
+		if err != nil {
+			log.DefaultLogger.Error(err.Error())
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("ReadById failure: %v", err.Error()))
+		}
+		if points.RowCount() < 1 {
+			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Id not found: %v", refStr))
+		}
+		point := points.RowAt(0)
+		hisRead, err := datasource.hisRead(point, query.TimeRange)
 		if err != nil {
 			log.DefaultLogger.Error(err.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisRead failure: %v", err.Error()))
@@ -166,37 +176,31 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 		return response
 
 	case "hisReadFilter":
-		pointsGrid, readErr := datasource.read(model.HisReadFilter+" and hisStart", variables)
+		pointsGrid, readErr := datasource.read(model.HisReadFilter+" and his", variables)
 		if readErr != nil {
 			log.DefaultLogger.Error(readErr.Error())
 			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("HisReadFilter failure: %v", readErr.Error()))
 		}
 		points := pointsGrid.Rows()
-		recLimit := 300
-		if len(points) > recLimit {
-			errMsg := fmt.Sprintf("Query exceeded record limit of %d: %d records", recLimit, len(points))
+		pointMax := 300
+		if len(points) == 0 {
+			errMsg := fmt.Sprintf("Query returned no historized records")
+			log.DefaultLogger.Error(errMsg)
+			return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
+		}
+		if len(points) > pointMax {
+			errMsg := fmt.Sprintf("Query exceeded record limit of %d: %d records", pointMax, len(points))
 			log.DefaultLogger.Error(errMsg)
 			return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
 		}
 
 		// Function to read a single point and send it to a channel.
 		readPoint := func(point haystack.Row, hisReadChannel chan haystack.Grid, wg *sync.WaitGroup) {
-			id := point.Get("id")
-			var ref haystack.Ref
-			switch id.(type) {
-			case haystack.Ref:
-				ref = id.(haystack.Ref)
-			default:
-				errMsg := fmt.Sprintf("id is not a ref: %v", id)
-				log.DefaultLogger.Error(errMsg)
-				hisReadChannel <- haystack.EmptyGrid()
-			}
-			hisRead, err := datasource.hisRead(ref, query.TimeRange)
+			hisRead, err := datasource.hisRead(point, query.TimeRange)
 			if err != nil {
 				log.DefaultLogger.Error(err.Error())
-				hisReadChannel <- haystack.EmptyGrid()
 			}
-			hisReadChannel <- hisRead
+			hisReadChannel <- hisRead // hisRead is empty under error condition
 			wg.Done()
 		}
 
@@ -310,9 +314,26 @@ func (datasource *Datasource) eval(expr string, variables map[string]string) (ha
 	)
 }
 
-func (datasource *Datasource) hisRead(id haystack.Ref, timeRange backend.TimeRange) (haystack.Grid, error) {
-	start := haystack.NewDateTimeFromGo(timeRange.From.UTC())
-	end := haystack.NewDateTimeFromGo(timeRange.To.UTC())
+func (datasource *Datasource) hisRead(point haystack.Row, timeRange backend.TimeRange) (haystack.Grid, error) {
+	id, idIsRef := point.Get("id").(haystack.Ref)
+	if !idIsRef {
+		return haystack.EmptyGrid(), fmt.Errorf("id is not a Ref")
+	}
+	tz, tzIsStr := point.Get("tz").(haystack.Str)
+	if !tzIsStr {
+		return haystack.EmptyGrid(), fmt.Errorf("tz is not a Str: %v", id)
+	}
+
+	// Must convert input date range to the point's timezone.
+	// See https://github.com/skyfoundry/haystack-java/blob/30380dbbe4b5d9be8eb3f400195b0cdcdcc67b95/src/main/java/org/projecthaystack/server/HServer.java#L328
+	start, startErr := haystack.NewDateTimeFromGo(timeRange.From).ToTz(tz.String())
+	if startErr != nil {
+		return haystack.EmptyGrid(), startErr
+	}
+	end, endErr := haystack.NewDateTimeFromGo(timeRange.To).ToTz(tz.String())
+	if endErr != nil {
+		return haystack.EmptyGrid(), endErr
+	}
 
 	return datasource.withRetry(
 		func() (haystack.Grid, error) {
@@ -329,6 +350,19 @@ func (datasource *Datasource) read(filter string, variables map[string]string) (
 	return datasource.withRetry(
 		func() (haystack.Grid, error) {
 			return datasource.client.Read(filter)
+		},
+	)
+}
+
+func (datasource *Datasource) readById(id string, variables map[string]string) (haystack.Grid, error) {
+	for name, val := range variables {
+		id = strings.ReplaceAll(id, name, val)
+	}
+
+	ref := haystack.NewRef(id, "")
+	return datasource.withRetry(
+		func() (haystack.Grid, error) {
+			return datasource.client.ReadByIds([]haystack.Ref{ref})
 		},
 	)
 }
@@ -477,36 +511,35 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 
 		// Set Grafana field info from Haystack grid info
 		config := &data.FieldConfig{}
-		config.DisplayName = disFromGrid(grid, col)
+		config.DisplayName = disFromMeta(col.Meta(), col.Name())
 		config.Unit = unitFromGrid(grid, col)
 		field.Config = config
 		fields = append(fields, field)
 	}
 
 	frame := data.NewFrame("response", fields...)
-
-	switch id := grid.Meta().Get("id").(type) {
-	case haystack.Ref:
-		frame.Name = id.Dis()
-	default:
-		frame.Name = ""
-	}
+	frameName := disFromMeta(grid.Meta(), "")
+	frame.Name = frameName
 	return frame, nil
 }
 
-// disFromGrid returns the display name of a column in a haystack grid
-func disFromGrid(grid haystack.Grid, col haystack.Col) string {
-	// If column has 'id' meta, use the Ref name
-	id := col.Meta().Get("id")
-	if id != nil {
-		switch id := id.(type) {
-		case haystack.Ref:
-			return id.Dis()
-		default:
-			return col.Name()
-		}
+// disFromMeta returns the display name using metadata. It falls back to the provided string if no other name can be found
+func disFromMeta(meta haystack.Dict, name string) string {
+	// Use meta 'dis'
+	colDis, success := meta.Get("dis").(haystack.Str)
+	if success {
+		return colDis.String()
 	}
-	return col.Name()
+	// Then 'id.dis' or 'id'
+	colRef, success := meta.Get("id").(haystack.Ref)
+	if success {
+		if colRef.Dis() != "" {
+			return colRef.Dis()
+		}
+		return colRef.ToZinc()
+	}
+	// Then the input name. We shouldn't get here because all records should have an
+	return name
 }
 
 // unitFromGrid returns the unit of a column in a haystack grid

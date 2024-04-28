@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.16
+Upgrades to haystack v0.1.13 to loosen basic auth server requirements.
+
 ## 0.0.15
 Fixes haystack v0.1.12 upgrade.
 
