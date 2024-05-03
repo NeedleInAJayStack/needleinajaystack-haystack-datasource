@@ -1,6 +1,5 @@
 import {
   DataSourceInstanceSettings,
-  CoreApp,
   ScopedVars,
   DataQueryRequest,
   DataFrame,
@@ -11,14 +10,7 @@ import {
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
-import {
-  HaystackQuery,
-  OpsQuery,
-  HaystackDataSourceOptions,
-  DEFAULT_QUERY,
-  HaystackVariableQuery,
-  QueryType,
-} from './types';
+import { HaystackQuery, OpsQuery, HaystackDataSourceOptions, HaystackVariableQuery, QueryType } from './types';
 import { firstValueFrom } from 'rxjs';
 
 export const queryTypes: QueryType[] = [
@@ -132,10 +124,6 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       });
       return acc.concat(fieldVals);
     }, []);
-  }
-
-  getDefaultQuery(_: CoreApp): Partial<HaystackQuery> {
-    return DEFAULT_QUERY;
   }
 
   // Returns a DataQueryRequest that gets the available ops from the datasource
