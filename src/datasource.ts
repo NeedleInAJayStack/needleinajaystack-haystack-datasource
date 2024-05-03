@@ -7,6 +7,7 @@ import {
   Field,
   MetricFindValue,
   getDefaultTimeRange,
+  FieldType,
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
@@ -113,14 +114,20 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       }
 
       let fieldVals = field.values.map((value) => {
-        if (value.startsWith('@')) {
-          // Detect ref using @ prefix, and adjust value to just the Ref
-          let spaceIndex = value.indexOf(' ');
-          let id = value.substring(0, spaceIndex);
-          return { text: value, value: id };
-        } else {
-          // Otherwise, just use the value directly
-          return { text: value, value: value };
+        switch (field.type) {
+          case FieldType.string:
+            if (value.startsWith('@')) {
+              // Detect ref using @ prefix, and adjust value to just the Ref
+              let spaceIndex = value.indexOf(' ');
+              let id = value.substring(0, spaceIndex);
+              let dis = value.substring(spaceIndex + 2, value.length - 1);
+              return { text: dis, value: id };
+            } else {
+              // Otherwise, just use the value directly
+              return { text: value, value: value };
+            }
+          default:
+            return { text: value, value: value };
         }
       });
       return acc.concat(fieldVals);
