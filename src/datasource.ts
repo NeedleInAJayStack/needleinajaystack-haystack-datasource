@@ -98,7 +98,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
 
   // This is called when the user is selecting a variable value
   async metricFindQuery(variableQuery: HaystackVariableQuery, options?: any) {
-    let request: HaystackQuery = variableQuery.query;
+    let request: HaystackQuery = variableQuery;
     let observable = this.query({ targets: [request] } as DataQueryRequest<HaystackQuery>);
     let response = await firstValueFrom(observable);
 

@@ -1,85 +1,80 @@
 import React, { useState } from 'react';
-import { HaystackQuery, HaystackVariableQuery } from '../types';
+import { HaystackVariableQuery } from '../types';
 import { HaystackQueryTypeSelector } from './HaystackQueryTypeSelector';
 import { HaystackQueryInput } from './HaystackQueryInput';
+import { InlineField, Input } from '@grafana/ui';
 
 interface VariableQueryProps {
   query: HaystackVariableQuery;
   onChange: (query: HaystackVariableQuery, definition: string) => void;
 }
 
-const blankQuery: Partial<HaystackQuery> = {
-  refId: "variable",
-  type: '',
-  eval: '',
-  hisRead: '',
-  read: '',
-};
+const refId = "variable";
 
 export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, query: variableQuery }) => {
-  const [state, setState] = useState(variableQuery);
+  const [query, setState] = useState(variableQuery);
 
   const saveQuery = () => {
-    let query =  state.query ?? blankQuery
+    // refId must match but doesn't get set originally so set should set it on every change
+    setState({ ...query, refId: refId});
+
     let type = query.type;
     let queryCmd = "";
-    if (query.type === "hisRead") {
-      queryCmd = query.hisRead
-    } else if (query.type === "eval") {
+    if (query.type === "eval") {
       queryCmd = query.eval
+    } else if (query.type === "hisRead") {
+      queryCmd = query.hisRead
+    } else if (query.type === "hisReadFilter") {
+      queryCmd = query.hisReadFilter
     } else if (query.type === "read") {
       queryCmd = query.read
     }
     let column = "none";
-    if (state.column !== undefined && state.column !== '') {
-      column = `'${state.column}'`;
+    if (query.column !== undefined && query.column !== '') {
+      column = `'${query.column}'`;
     }
-    onChange(state, `Type: '${type}' Query: '${queryCmd}' Column: ${column}`);
+    let displayString = `${type}: '${queryCmd}', Column: ${column}`
+    onChange(query, displayString);
   };
 
   const onTypeChange = (newType: string) => {
-    let query = {...state.query ?? blankQuery};
-    query.type = newType;
-    setState({ ...state, query: query});
+    setState({ ...query, type: newType});
   };
 
   const onQueryChange = (newQuery: string) => {
-    let query = {...state.query ?? blankQuery};
-    if (state.query.type === "hisRead") {
-      query.hisRead = newQuery
-    } else if (state.query.type === "eval") {
-      query.eval = newQuery
-    } else if (state.query.type === "read") {
-      query.read = newQuery
+    if (query.type === "eval") {
+      setState({ ...query, eval: newQuery });
+    } else if (query.type === "hisRead") {
+      setState({ ...query, hisRead: newQuery });
+    } else if (query.type === "hisReadFilter") {
+      setState({ ...query, hisReadFilter: newQuery });
+    } else if (query.type === "read") {
+      setState({ ...query, read: newQuery });
     }
-    setState({ ...state, query: query});
   };
 
   const onColumnChange = (event: React.FormEvent<HTMLInputElement>) => {
-    setState({...state, column: event.currentTarget.value,});
+    setState({...query, column: event.currentTarget.value,});
   };
 
   return (
     <div onBlur={saveQuery}>
       <HaystackQueryTypeSelector
         datasource={null}
-        type={state.query?.type ?? blankQuery.type}
-        refId={state.query?.refId ?? blankQuery.refId}
+        type={query.type}
+        refId={query.refId ?? refId}
         onChange={onTypeChange}
       />
       <HaystackQueryInput
-        query={state.query ?? blankQuery}
+        query={query}
         onChange={onQueryChange}
       />
-      <div className="gf-form">
-        <span className="gf-form-label width-10">Column</span>
-        <input
-          name="column"
-          className="gf-form-input"
+      <InlineField label="Column">
+        <Input
           onChange={onColumnChange}
-          value={state.column}
+          value={query.column}
         />
-      </div>
+      </InlineField>
     </div>
   );
 };

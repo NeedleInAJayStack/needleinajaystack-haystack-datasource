@@ -28,9 +28,9 @@ export interface QueryType extends SelectableValue<string> {
   apiRequirements: string[];
 }
 
-export interface HaystackVariableQuery {
-  query: HaystackQuery;
+export interface HaystackVariableQuery extends HaystackQuery {
   column: string;
+  refId: string;
 }
 
 export const DEFAULT_QUERY: Partial<HaystackQuery> = {
