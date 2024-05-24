@@ -66,7 +66,7 @@ To use them, simply enter the value in the input string. Below is an example of 
 ### Query Variables
 
 You can use the Haystack connector to source new variables. Create a query and then enter the name of the column that
-contains the variable values. If no column is specified, the first one is used.
+contains the variable values. If no column is specified, `id` is used if present. Otherwise, the first column is used.
 
 The value injected by the variable exactly matches the displayed value, with the exception of Ref types. Instead, Ref
 types display the "display" portion and inject only the "ID" portion (i.e. `@abc "Site A"` will be displayed as `Site A`

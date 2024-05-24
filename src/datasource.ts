@@ -99,10 +99,14 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
     }
 
     return response.data.reduce((acc: MetricFindValue[], frame: DataFrame) => {
+      // Default to the first field
       let field = frame.fields[0];
       if (variableQuery.column !== undefined && variableQuery.column !== '') {
         // If a column was input, match the column name
         field = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? field;
+      } else if (frame.fields.some((field: Field) => field.name === 'id')) {
+        // If there is an id column, use that
+        field = frame.fields.find((field: Field) => field.name === 'id') ?? field;
       }
 
       let fieldVals = field.values.map((value) => {
