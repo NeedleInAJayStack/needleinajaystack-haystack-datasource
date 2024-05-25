@@ -1,4 +1,5 @@
-import { DataQuery, DataSourceJsonData, SelectableValue } from '@grafana/data';
+import { DataSourceJsonData, SelectableValue } from '@grafana/data';
+import { DataQuery } from '@grafana/schema';
 
 export interface HaystackQuery extends DataQuery {
   type: string; // Defines the type of query that should be executed
