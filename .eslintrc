@@ -1,6 +1,3 @@
 {
-  "extends": [
-    "./.config/.eslintrc",
-    "prettier"
-  ]
+  "extends": "./.config/.eslintrc"
 }
