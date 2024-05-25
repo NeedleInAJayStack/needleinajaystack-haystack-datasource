@@ -1,6 +1,6 @@
 {
-  "extends": [
-    "./.config/.eslintrc",
-    "prettier"
-  ]
+  "extends": "./.config/.eslintrc",
+  "parserOptions": {
+    "project": "./.config/tsconfig.json"
+  }
 }

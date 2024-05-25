@@ -6,7 +6,6 @@ import {
   DataFrame,
   Field,
   MetricFindValue,
-  Vector,
   getDefaultTimeRange,
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
@@ -50,11 +49,11 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       return frame.refId === refId;
     });
 
-    let ops: string[] = []
-    
-    let defField = frame?.fields?.find((field: Field<any, Vector<string>>) => {
+    let ops: string[] = [];
+
+    let defField = frame?.fields?.find((field: Field<any, [string]>) => {
       return field.name === 'def';
-    })
+    });
     if (defField != null) {
       ops = defField.values.map((opSymbol: string) => {
         if (opSymbol.startsWith('^op:')) {
@@ -65,9 +64,9 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       });
     } else {
       // Include back-support for old `ops` format, which uses "name", not "defs". Used by nhaystack
-      let nameField = frame?.fields?.find((field: Field<any, Vector<string>>) => {
+      let nameField = frame?.fields?.find((field: Field<any, [string]>) => {
         return field.name === 'name';
-      })
+      });
       if (nameField != null) {
         ops = nameField.values;
       }
@@ -99,7 +98,8 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
   // This is called when the user is selecting a variable value
   async metricFindQuery(variableQuery: HaystackVariableQuery, options?: any) {
     let request: HaystackQuery = variableQuery.query;
-    let response = await this.query({ targets: [request] } as DataQueryRequest<HaystackQuery>).toPromise();
+    let observable = this.query({ targets: [request] } as DataQueryRequest<HaystackQuery>);
+    let response = await firstValueFrom(observable);
 
     if (response === undefined || response.data === undefined) {
       return [];
@@ -112,7 +112,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
         field = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? field;
       }
 
-      let fieldVals = field.values.toArray().map((value) => {
+      let fieldVals = field.values.map((value) => {
         if (value.startsWith('@')) {
           // Detect ref using @ prefix, and adjust value to just the Ref
           let spaceIndex = value.indexOf(' ');
@@ -136,7 +136,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
   private opsRequest(refId: string): DataQueryRequest<HaystackQuery> {
     return {
       requestId: 'ops',
-      dashboardId: 0,
+      dashboardUID: '0',
       interval: '0',
       intervalMs: 0,
       panelId: 0,
