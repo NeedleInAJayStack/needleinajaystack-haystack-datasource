@@ -6,7 +6,6 @@ import {
   DataFrame,
   Field,
   MetricFindValue,
-  Vector,
   getDefaultTimeRange,
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
@@ -46,15 +45,15 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
     if (result?.state === 'Error') {
       return [];
     }
-    let frame = result?.data?.find((frame: DataFrame) => {
+    let frame: DataFrame | undefined = result?.data?.find((frame: DataFrame) => {
       return frame.refId === refId;
     });
 
-    let ops: string[] = []
-    
-    let defField = frame?.fields?.find((field: Field<any, Vector<string>>) => {
+    let ops: string[] = [];
+
+    let defField = frame?.fields?.find((field: Field<string>) => {
       return field.name === 'def';
-    })
+    });
     if (defField != null) {
       ops = defField.values.map((opSymbol: string) => {
         if (opSymbol.startsWith('^op:')) {
@@ -65,9 +64,9 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       });
     } else {
       // Include back-support for old `ops` format, which uses "name", not "defs". Used by nhaystack
-      let nameField = frame?.fields?.find((field: Field<any, Vector<string>>) => {
+      let nameField = frame?.fields?.find((field: Field<string>) => {
         return field.name === 'name';
-      })
+      });
       if (nameField != null) {
         ops = nameField.values;
       }
@@ -86,7 +85,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
     return availableQueryTypes;
   }
 
-  applyTemplateVariables(query: HaystackQuery, scopedVars: ScopedVars): Record<string, any> {
+  applyTemplateVariables(query: HaystackQuery, scopedVars: ScopedVars): HaystackQuery {
     return {
       ...query,
       eval: getTemplateSrv().replace(query.eval, scopedVars, 'csv'),
@@ -136,7 +135,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
   private opsRequest(refId: string): DataQueryRequest<HaystackQuery> {
     return {
       requestId: 'ops',
-      dashboardId: 0,
+      dashboardUID: '0',
       interval: '0',
       intervalMs: 0,
       panelId: 0,
