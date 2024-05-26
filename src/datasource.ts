@@ -1,23 +1,16 @@
 import {
   DataSourceInstanceSettings,
-  CoreApp,
   ScopedVars,
   DataQueryRequest,
   DataFrame,
   Field,
   MetricFindValue,
   getDefaultTimeRange,
+  FieldType,
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
-import {
-  HaystackQuery,
-  OpsQuery,
-  HaystackDataSourceOptions,
-  DEFAULT_QUERY,
-  HaystackVariableQuery,
-  QueryType,
-} from './types';
+import { HaystackQuery, OpsQuery, HaystackDataSourceOptions, HaystackVariableQuery, QueryType } from './types';
 import { firstValueFrom } from 'rxjs';
 
 export const queryTypes: QueryType[] = [
@@ -97,7 +90,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
 
   // This is called when the user is selecting a variable value
   async metricFindQuery(variableQuery: HaystackVariableQuery, options?: any) {
-    let request: HaystackQuery = variableQuery.query;
+    let request: HaystackQuery = variableQuery;
     let observable = this.query({ targets: [request] } as DataQueryRequest<HaystackQuery>);
     let response = await firstValueFrom(observable);
 
@@ -106,29 +99,35 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
     }
 
     return response.data.reduce((acc: MetricFindValue[], frame: DataFrame) => {
+      // Default to the first field
       let field = frame.fields[0];
       if (variableQuery.column !== undefined && variableQuery.column !== '') {
         // If a column was input, match the column name
         field = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? field;
+      } else if (frame.fields.some((field: Field) => field.name === 'id')) {
+        // If there is an id column, use that
+        field = frame.fields.find((field: Field) => field.name === 'id') ?? field;
       }
 
       let fieldVals = field.values.map((value) => {
-        if (value.startsWith('@')) {
-          // Detect ref using @ prefix, and adjust value to just the Ref
-          let spaceIndex = value.indexOf(' ');
-          let id = value.substring(0, spaceIndex);
-          return { text: value, value: id };
-        } else {
-          // Otherwise, just use the value directly
-          return { text: value, value: value };
+        switch (field.type) {
+          case FieldType.string:
+            if (value.startsWith('@')) {
+              // Detect ref using @ prefix, and adjust value to just the Ref
+              let spaceIndex = value.indexOf(' ');
+              let id = value.substring(0, spaceIndex);
+              let dis = value.substring(spaceIndex + 2, value.length - 1);
+              return { text: dis, value: id };
+            } else {
+              // Otherwise, just use the value directly
+              return { text: value, value: value };
+            }
+          default:
+            return { text: value, value: value };
         }
       });
       return acc.concat(fieldVals);
     }, []);
-  }
-
-  getDefaultQuery(_: CoreApp): Partial<HaystackQuery> {
-    return DEFAULT_QUERY;
   }
 
   // Returns a DataQueryRequest that gets the available ops from the datasource

@@ -284,7 +284,7 @@ func (datasource *Datasource) CheckHealth(_ context.Context, req *backend.CheckH
 	if err != nil {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
-			Message: "Uh oh, something's wrong with the connection",
+			Message: err.Error(),
 		}, err
 	}
 
