@@ -114,10 +114,16 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
           case FieldType.string:
             if (value.startsWith('@')) {
               // Detect ref using @ prefix, and adjust value to just the Ref
-              let spaceIndex = value.indexOf(' ');
-              let id = value.substring(0, spaceIndex);
-              let dis = value.substring(spaceIndex + 2, value.length - 1);
-              return { text: dis, value: id };
+              const spaceIndex = value.indexOf(' ');
+              if (spaceIndex > -1) {
+                // Display name exists
+                const id = value.substring(0, spaceIndex);
+                const dis = value.substring(spaceIndex + 2, value.length - 1);
+                return { text: dis, value: id };
+              } else {
+                // Otherwise, just use id
+                return { text: value, value: value };
+              }
             } else {
               // Otherwise, just use the value directly
               return { text: value, value: value };
