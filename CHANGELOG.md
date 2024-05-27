@@ -1,10 +1,14 @@
 # Changelog
 
+## 0.0.17
+- Ref variables do not include id in display
+- Variables use `id` column if unspecified
+
 ## 0.0.16
-Adds full nhaystack support with basic authentication
-Improves display name detection
-Changes default query type to `read` to better support non-Axon environments
-Loosens basic auth server header requirements
+- Adds full nhaystack support with basic authentication
+- Improves display name detection
+- Changes default query type to `read` to better support non-Axon environments
+- Loosens basic auth server header requirements
 
 ## 0.0.15
 Fixes haystack v0.1.12 upgrade.
