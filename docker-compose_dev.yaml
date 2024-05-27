@@ -6,12 +6,13 @@ services:
     build:
       context: ./.config
       args:
-        grafana_version: ${GRAFANA_VERSION:-10.3.5}
+        grafana_version: ${GRAFANA_VERSION:-latest}
     ports:
       - 3000:3000/tcp
     volumes:
       - ./dist:/var/lib/grafana/plugins/needleinajaystack-haystack-datasource
       - ./provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
   haxall:
     image: "needleinajaystack/haxall:latest"
     environment:
@@ -21,3 +22,6 @@ services:
       - 8080:8080/tcp
     volumes:
       - ~/haxall/proj:/opt/haxall/proj
+
+volumes:
+  grafana_data:
