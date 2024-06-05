@@ -12,6 +12,7 @@ import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
 import { HaystackQuery, OpsQuery, HaystackDataSourceOptions, HaystackVariableQuery, QueryType } from './types';
 import { firstValueFrom } from 'rxjs';
+import { isRef, parseRef } from 'haystack';
 
 export const queryTypes: QueryType[] = [
   { label: 'Eval', value: 'eval', apiRequirements: ['eval'], description: 'Evaluate an Axon expression' },
@@ -118,32 +119,10 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       }
 
       let variableValues = column.values.map((value, index) => {
-        let variableValue = value;
-        switch (column.type) {
-          case FieldType.string:
-            if (value.startsWith('@')) {
-              // Detect ref using @ prefix, and adjust value to just the Ref
-              const spaceIndex = value.indexOf(' ');
-              if (spaceIndex > -1) {
-                // Display name exists
-                variableValue = value.substring(0, spaceIndex);
-              }
-            }
-        }
+        let variableValue = variableValueFromCell(value, column.type);
 
         let displayValue = displayColumn.values[index];
-        let variableText = displayValue;
-        switch (displayColumn.type) {
-          case FieldType.string:
-            if (displayValue.startsWith('@')) {
-              // Detect ref using @ prefix, and adjust value to just the Ref
-              const spaceIndex = displayValue.indexOf(' ');
-              if (spaceIndex > -1) {
-                // Display name exists
-                variableText = displayValue.substring(spaceIndex + 2, displayValue.length - 1);
-              }
-            }
-        }
+        let variableText = variableTextFromCell(displayValue, displayColumn.type);
 
         return { text: variableText, value: variableValue };
       });
@@ -169,4 +148,25 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       startTime: 0,
     };
   }
+}
+
+function variableValueFromCell(value: string, columnType: FieldType): string {
+  switch (columnType) {
+    case FieldType.string:
+      if (isRef(value)) {
+        return parseRef(value).id;
+      }
+  }
+  return value;
+}
+
+function variableTextFromCell(value: string, columnType: FieldType): string {
+  switch (columnType) {
+    case FieldType.string:
+      if (isRef(value)) {
+        let ref = parseRef(value);
+        return ref.dis ?? ref.id;
+      }
+  }
+  return value;
 }
