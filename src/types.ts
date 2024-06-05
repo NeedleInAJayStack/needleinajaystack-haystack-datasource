@@ -30,6 +30,7 @@ export interface QueryType extends SelectableValue<string> {
 
 export interface HaystackVariableQuery extends HaystackQuery {
   column: string;
+  displayColumn: string;
   refId: string;
 }
 

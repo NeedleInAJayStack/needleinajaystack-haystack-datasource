@@ -33,7 +33,11 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
     if (query.column !== undefined && query.column !== '') {
       column = `'${query.column}'`;
     }
-    let displayString = `${type}: '${queryCmd}', Column: ${column}`
+    let displayColumn = "none";
+    if (query.displayColumn !== undefined && query.displayColumn !== '') {
+      displayColumn = `'${query.displayColumn}'`;
+    }
+    let displayString = `${type}: '${queryCmd}', Column: ${column}, Display: ${displayColumn}`
     onChange(query, displayString);
   };
 
@@ -57,6 +61,10 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
     setState({...query, column: event.currentTarget.value,});
   };
 
+  const onDisplayColumnChange = (event: React.FormEvent<HTMLInputElement>) => {
+    setState({...query, displayColumn: event.currentTarget.value,});
+  };
+
   return (
     <div onBlur={saveQuery}>
       <HaystackQueryTypeSelector
@@ -73,6 +81,12 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
         <Input
           onChange={onColumnChange}
           value={query.column}
+        />
+      </InlineField>
+      <InlineField label="Display Column">
+        <Input
+          onChange={onDisplayColumnChange}
+          value={query.displayColumn}
         />
       </InlineField>
     </div>
