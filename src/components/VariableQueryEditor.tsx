@@ -12,6 +12,7 @@ interface VariableQueryProps {
 const refId = "variable";
 
 export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, query: variableQuery }) => {
+  let variableInputWidth = 30;
   const [query, setState] = useState(variableQuery);
 
   const saveQuery = () => {
@@ -79,14 +80,18 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
       />
       <InlineField label="Column">
         <Input
+          width={variableInputWidth}
           onChange={onColumnChange}
           value={query.column}
+          placeholder="Defaults to 'id' or first column"
         />
       </InlineField>
       <InlineField label="Display Column">
         <Input
+          width={variableInputWidth}
           onChange={onDisplayColumnChange}
           value={query.displayColumn}
+          placeholder="Defaults to 'Column'"
         />
       </InlineField>
     </div>
