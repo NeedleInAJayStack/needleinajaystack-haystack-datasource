@@ -12,6 +12,7 @@ interface VariableQueryProps {
 const refId = "variable";
 
 export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, query: variableQuery }) => {
+  let variableInputWidth = 30;
   const [query, setState] = useState(variableQuery);
 
   const saveQuery = () => {
@@ -33,7 +34,11 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
     if (query.column !== undefined && query.column !== '') {
       column = `'${query.column}'`;
     }
-    let displayString = `${type}: '${queryCmd}', Column: ${column}`
+    let displayColumn = "none";
+    if (query.displayColumn !== undefined && query.displayColumn !== '') {
+      displayColumn = `'${query.displayColumn}'`;
+    }
+    let displayString = `${type}: '${queryCmd}', Column: ${column}, Display: ${displayColumn}`
     onChange(query, displayString);
   };
 
@@ -57,6 +62,10 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
     setState({...query, column: event.currentTarget.value,});
   };
 
+  const onDisplayColumnChange = (event: React.FormEvent<HTMLInputElement>) => {
+    setState({...query, displayColumn: event.currentTarget.value,});
+  };
+
   return (
     <div onBlur={saveQuery}>
       <HaystackQueryTypeSelector
@@ -71,8 +80,18 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
       />
       <InlineField label="Column">
         <Input
+          width={variableInputWidth}
           onChange={onColumnChange}
           value={query.column}
+          placeholder="Defaults to 'id' or first column"
+        />
+      </InlineField>
+      <InlineField label="Display Column">
+        <Input
+          width={variableInputWidth}
+          onChange={onDisplayColumnChange}
+          value={query.displayColumn}
+          placeholder="Defaults to 'Column'"
         />
       </InlineField>
     </div>

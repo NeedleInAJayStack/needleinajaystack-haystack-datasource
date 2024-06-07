@@ -12,6 +12,7 @@ import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
 import { HaystackQuery, OpsQuery, HaystackDataSourceOptions, HaystackVariableQuery, QueryType } from './types';
 import { firstValueFrom } from 'rxjs';
+import { isRef, parseRef } from 'haystack';
 
 export const queryTypes: QueryType[] = [
   { label: 'Eval', value: 'eval', apiRequirements: ['eval'], description: 'Evaluate an Axon expression' },
@@ -100,39 +101,33 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
 
     return response.data.reduce((acc: MetricFindValue[], frame: DataFrame) => {
       // Default to the first field
-      let field = frame.fields[0];
+      let column = frame.fields[0];
       if (variableQuery.column !== undefined && variableQuery.column !== '') {
         // If a column was input, match the column name
-        field = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? field;
+        column = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? column;
       } else if (frame.fields.some((field: Field) => field.name === 'id')) {
         // If there is an id column, use that
-        field = frame.fields.find((field: Field) => field.name === 'id') ?? field;
+        column = frame.fields.find((field: Field) => field.name === 'id') ?? column;
       }
 
-      let fieldVals = field.values.map((value) => {
-        switch (field.type) {
-          case FieldType.string:
-            if (value.startsWith('@')) {
-              // Detect ref using @ prefix, and adjust value to just the Ref
-              const spaceIndex = value.indexOf(' ');
-              if (spaceIndex > -1) {
-                // Display name exists
-                const id = value.substring(0, spaceIndex);
-                const dis = value.substring(spaceIndex + 2, value.length - 1);
-                return { text: dis, value: id };
-              } else {
-                // Otherwise, just use id
-                return { text: value, value: value };
-              }
-            } else {
-              // Otherwise, just use the value directly
-              return { text: value, value: value };
-            }
-          default:
-            return { text: value, value: value };
-        }
+      // Default to the selected column
+      let displayColumn = column;
+      if (variableQuery.displayColumn !== undefined && variableQuery.displayColumn !== '') {
+        // If a column was input, match the column name
+        displayColumn =
+          frame.fields.find((field: Field) => field.name === variableQuery.displayColumn) ?? displayColumn;
+      }
+
+      let variableValues = column.values.map((value, index) => {
+        let variableValue = variableValueFromCell(value, column.type);
+
+        let displayValue = displayColumn.values[index];
+        let variableText = variableTextFromCell(displayValue, displayColumn.type);
+
+        return { text: variableText, value: variableValue };
       });
-      return acc.concat(fieldVals);
+
+      return acc.concat(variableValues);
     }, []);
   }
 
@@ -153,4 +148,25 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       startTime: 0,
     };
   }
+}
+
+function variableValueFromCell(value: string, columnType: FieldType): string {
+  switch (columnType) {
+    case FieldType.string:
+      if (isRef(value)) {
+        return parseRef(value).id;
+      }
+  }
+  return value;
+}
+
+function variableTextFromCell(value: string, columnType: FieldType): string {
+  switch (columnType) {
+    case FieldType.string:
+      if (isRef(value)) {
+        let ref = parseRef(value);
+        return ref.dis ?? ref.id;
+      }
+  }
+  return value;
 }
