@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.19
+- Adds 'display column' support to variables
+- Adds placeholders to variable column inputs to explain behavior
+
 ## 0.0.17
 - Ref variables do not include id in display
 - Variables use `id` column if unspecified
