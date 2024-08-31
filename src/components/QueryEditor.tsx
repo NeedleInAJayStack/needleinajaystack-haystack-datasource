@@ -1,8 +1,9 @@
 import React, {  } from 'react';
-import { Button, Form, VerticalGroup } from '@grafana/ui';
+import { useForm } from "react-hook-form";
+import { Button, Stack } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
-import { HaystackDataSourceOptions, HaystackQuery } from '../types';
+import { DEFAULT_QUERY, HaystackDataSourceOptions, HaystackQuery } from '../types';
 import { HaystackQueryTypeSelector } from './HaystackQueryTypeSelector';
 import { HaystackQueryInput } from './HaystackQueryInput';
 
@@ -29,27 +30,27 @@ export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) 
     onRunQuery();
   }
 
+  const { register, handleSubmit } = useForm({
+    defaultValues: DEFAULT_QUERY
+  });
+
   return (
     <div className="gf-form">
-      <Form onSubmit={onSubmit}>
-        {({ register, errors }) => {
-          return (
-            <VerticalGroup>
-              <HaystackQueryTypeSelector
-                datasource={datasource}
-                type={query.type}
-                refId={query.refId}
-                onChange={onTypeChange}
-              />
-              <HaystackQueryInput
-                query={query}
-                onChange={onQueryChange}
-              />
-              <Button type="submit" >Run</Button>
-            </VerticalGroup>
-          );
-        }}
-      </Form>
+      <form onSubmit={onSubmit}>
+        <Stack direction="column">
+          <HaystackQueryTypeSelector
+            datasource={datasource}
+            type={query.type}
+            refId={query.refId}
+            onChange={onTypeChange}
+          />
+          <HaystackQueryInput
+            query={query}
+            onChange={onQueryChange}
+          />
+          <Button type="submit" >Run</Button>
+        </Stack>
+      </form>
     </div>
   );
 }
