@@ -45,7 +45,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
 
     let ops: string[] = [];
 
-    let defField = frame?.fields?.find((field: Field<any, [string]>) => {
+    let defField = frame?.fields?.find((field: Field<[string]>) => {
       return field.name === 'def';
     });
     if (defField != null) {
@@ -58,7 +58,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       });
     } else {
       // Include back-support for old `ops` format, which uses "name", not "defs". Used by nhaystack
-      let nameField = frame?.fields?.find((field: Field<any, [string]>) => {
+      let nameField = frame?.fields?.find((field: Field<[string]>) => {
         return field.name === 'name';
       });
       if (nameField != null) {
@@ -79,7 +79,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
     return availableQueryTypes;
   }
 
-  applyTemplateVariables(query: HaystackQuery, scopedVars: ScopedVars): Record<string, any> {
+  applyTemplateVariables(query: HaystackQuery, scopedVars: ScopedVars): HaystackQuery {
     return {
       ...query,
       eval: getTemplateSrv().replace(query.eval, scopedVars, 'csv'),
