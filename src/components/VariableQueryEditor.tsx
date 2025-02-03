@@ -1,20 +1,19 @@
 import React, { PureComponent } from 'react';
-import { HaystackVariableQuery } from '../types';
+import { HaystackDataSourceOptions, HaystackQuery, HaystackVariableQuery } from '../types';
 import { HaystackQueryTypeSelector } from './HaystackQueryTypeSelector';
 import { HaystackQueryInput } from './HaystackQueryInput';
 import { InlineField, Input } from '@grafana/ui';
+import { DataSource } from 'datasource';
+import { QueryEditorProps } from '@grafana/data';
 
-interface VariableQueryProps {
-  query: HaystackVariableQuery;
-  onChange: (query: HaystackVariableQuery, definition: string) => void;
-}
+type VariableQueryProps = QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions, HaystackVariableQuery>;
 
 interface VariableState {
   query: HaystackVariableQuery;
   refId?: string;
 }
 
-const refId = "variable";
+export const VARIABLE_REF_ID = "variable";
 
 export class VariableQueryEditor extends PureComponent<VariableQueryProps, VariableState> {
   constructor(props: VariableQueryProps) {
@@ -28,29 +27,31 @@ export class VariableQueryEditor extends PureComponent<VariableQueryProps, Varia
 
   saveQuery() {
     // refId must match but doesn't get set originally so set should set it on every change
-    this.setState({ ...this.state, refId: refId});
+    this.setState({ ...this.state, refId: VARIABLE_REF_ID});
 
-    let type = this.state.query.type;
-    let queryCmd = "";
-    if (this.state.query.type === "eval") {
-      queryCmd = this.state.query.eval
-    } else if (this.state.query.type === "hisRead") {
-      queryCmd = this.state.query.hisRead
-    } else if (this.state.query.type === "hisReadFilter") {
-      queryCmd = this.state.query.hisReadFilter
-    } else if (this.state.query.type === "read") {
-      queryCmd = this.state.query.read
-    }
-    let column = "none";
-    if (this.state.query.column !== undefined && this.state.query.column !== '') {
-      column = `'${this.state.query.column}'`;
-    }
-    let displayColumn = "none";
-    if (this.state.query.displayColumn !== undefined && this.state.query.displayColumn !== '') {
-      displayColumn = `'${this.state.query.displayColumn}'`;
-    }
-    let displayString = `${type}: '${queryCmd}', Column: ${column}, Display: ${displayColumn}`
-    this.props.onChange(this.state.query, displayString);
+    // Returning a display string in `onChange` no longer seems to be used by Grafana?
+
+    // let type = this.state.query.type;
+    // let queryCmd = "";
+    // if (this.state.query.type === "eval") {
+    //   queryCmd = this.state.query.eval
+    // } else if (this.state.query.type === "hisRead") {
+    //   queryCmd = this.state.query.hisRead
+    // } else if (this.state.query.type === "hisReadFilter") {
+    //   queryCmd = this.state.query.hisReadFilter
+    // } else if (this.state.query.type === "read") {
+    //   queryCmd = this.state.query.read
+    // }
+    // let column = "none";
+    // if (this.state.query.column !== undefined && this.state.query.column !== '') {
+    //   column = `'${this.state.query.column}'`;
+    // }
+    // let displayColumn = "none";
+    // if (this.state.query.displayColumn !== undefined && this.state.query.displayColumn !== '') {
+    //   displayColumn = `'${this.state.query.displayColumn}'`;
+    // }
+    // let displayString = `${type}: '${queryCmd}', Column: ${column}, Display: ${displayColumn}`
+    this.props.onChange(this.state.query);
   };
 
   onTypeChange(newType: string) {
@@ -83,7 +84,7 @@ export class VariableQueryEditor extends PureComponent<VariableQueryProps, Varia
         <HaystackQueryTypeSelector
           datasource={null}
           type={this.state.query.type}
-          refId={this.state.query.refId ?? refId}
+          refId={this.state.query.refId ?? VARIABLE_REF_ID}
           onChange={(e) => this.onTypeChange(e)}
         />
         <HaystackQueryInput
