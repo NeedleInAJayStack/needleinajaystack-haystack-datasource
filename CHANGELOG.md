@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.20
+- Removes 'Run' button from query editor
+- Removes reliance on deprecated features
+- Bumps dependences to latest versions
+
 ## 0.0.19
 - Adds 'display column' support to variables
 - Adds placeholders to variable column inputs to explain behavior
