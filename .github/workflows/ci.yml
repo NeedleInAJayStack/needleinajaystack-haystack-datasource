@@ -40,7 +40,7 @@ jobs:
         run: yarn e2e
 
       - name: Stop grafana docker
-        run: docker-compose down
+        run: docker compose down
 
       - name: Check for backend
         id: check-for-backend

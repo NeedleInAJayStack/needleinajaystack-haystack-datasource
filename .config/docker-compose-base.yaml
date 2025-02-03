@@ -3,13 +3,13 @@ services:
     user: root
     container_name: 'needleinajaystack-haystack-datasource'
 
-    platform: 'linux/amd64'
     build:
-      context: ./.config
+      context: .
       args:
         grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
-        grafana_version: ${GRAFANA_VERSION:-latest}
+        grafana_version: ${GRAFANA_VERSION:-11.3.2}
         development: ${DEVELOPMENT:-false}
+        anonymous_auth_enabled: ${ANONYMOUS_AUTH_ENABLED:-true}
     ports:
       - 3000:3000/tcp
       - 2345:2345/tcp # delve
@@ -19,9 +19,9 @@ services:
     cap_add:
       - SYS_PTRACE
     volumes:
-      - ./dist:/var/lib/grafana/plugins/needleinajaystack-haystack-datasource
-      - ./provisioning:/etc/grafana/provisioning
-      - .:/root/needleinajaystack-haystack-datasource
+      - ../dist:/var/lib/grafana/plugins/needleinajaystack-haystack-datasource
+      - ../provisioning:/etc/grafana/provisioning
+      - ..:/root/needleinajaystack-haystack-datasource
 
     environment:
       NODE_ENV: development

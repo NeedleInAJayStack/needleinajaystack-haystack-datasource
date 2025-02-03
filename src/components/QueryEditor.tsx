@@ -1,5 +1,5 @@
 import React, {  } from 'react';
-import { Button, Form, VerticalGroup } from '@grafana/ui';
+import { Stack } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
 import { HaystackDataSourceOptions, HaystackQuery } from '../types';
@@ -24,32 +24,21 @@ export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) 
     }
   };
 
-  function onSubmit(newQuery: Partial<HaystackQuery>) {
-    query = { ...query, ...newQuery };
-    onRunQuery();
-  }
-
   return (
-    <div className="gf-form">
-      <Form onSubmit={onSubmit}>
-        {({ register, errors }) => {
-          return (
-            <VerticalGroup>
-              <HaystackQueryTypeSelector
-                datasource={datasource}
-                type={query.type}
-                refId={query.refId}
-                onChange={onTypeChange}
-              />
-              <HaystackQueryInput
-                query={query}
-                onChange={onQueryChange}
-              />
-              <Button type="submit" >Run</Button>
-            </VerticalGroup>
-          );
-        }}
-      </Form>
-    </div>
+    <Stack
+      direction="column"
+      alignItems="flex-start"
+    >
+      <HaystackQueryTypeSelector
+        datasource={datasource}
+        type={query.type}
+        refId={query.refId}
+        onChange={onTypeChange}
+      />
+      <HaystackQueryInput
+        query={query}
+        onChange={onQueryChange}
+      />
+    </Stack>
   );
 }

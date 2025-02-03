@@ -31,7 +31,7 @@ var (
 )
 
 // NewDatasource creates a new datasource instance.
-func NewDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	log.DefaultLogger.Debug("NewDatasource called")
 
 	// settings contains normal inputs in the .JSONData field in JSON byte form

@@ -1,4 +1,4 @@
-import { Icon, InlineField, Input } from '@grafana/ui';
+import { AutoSizeInput, Icon, InlineField } from '@grafana/ui';
 import React, { ChangeEvent } from 'react';
 import { DEFAULT_QUERY, HaystackQuery } from 'types';
 
@@ -12,13 +12,13 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
     onChange(event.target.value);
   };
 
-  let width = 100;
+  let minWidth = 50;
   switch (query.type) {
     case "eval":
       return (
         <InlineField>
-          <Input
-            width={width}
+          <AutoSizeInput
+            minWidth={minWidth}
             prefix={<Icon name="angle-right" />}
             onChange={onQueryChange}
             value={query.eval}
@@ -29,8 +29,8 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
     case "hisRead":
       return (
         <InlineField>
-          <Input
-            width={width}
+          <AutoSizeInput
+            minWidth={minWidth}
             prefix={'@'}
             onChange={onQueryChange}
             value={query.hisRead}
@@ -41,8 +41,8 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
     case "hisReadFilter":
       return (
         <InlineField>
-          <Input
-            width={width}
+          <AutoSizeInput
+            minWidth={minWidth}
             prefix={<Icon name="filter" />}
             onChange={onQueryChange}
             value={query.hisReadFilter}
@@ -53,8 +53,8 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
     case "read":
       return (
         <InlineField>
-          <Input
-            width={width}
+          <AutoSizeInput
+            minWidth={minWidth}
             prefix={<Icon name="filter" />}
             onChange={onQueryChange}
             value={query.read}

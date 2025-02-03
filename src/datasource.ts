@@ -7,12 +7,17 @@ import {
   MetricFindValue,
   getDefaultTimeRange,
   FieldType,
+  CustomVariableSupport,
+  DataQueryResponse,
+  QueryEditorProps,
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
 import { HaystackQuery, OpsQuery, HaystackDataSourceOptions, HaystackVariableQuery, QueryType } from './types';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map, Observable } from 'rxjs';
 import { isRef, parseRef } from 'haystack';
+import { ComponentType } from 'react';
+import { VARIABLE_REF_ID, VariableQueryEditor } from 'components/VariableQueryEditor';
 
 export const queryTypes: QueryType[] = [
   { label: 'Eval', value: 'eval', apiRequirements: ['eval'], description: 'Evaluate an Axon expression' },
@@ -29,6 +34,9 @@ export const queryTypes: QueryType[] = [
 export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<HaystackDataSourceOptions>) {
     super(instanceSettings);
+    this.variables = new HaystackVariableSupport((request) => {
+      return this.query(request)
+    });
   }
 
   // Queries the available ops from the datasource and returns the queryTypes that are supported.
@@ -45,7 +53,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
 
     let ops: string[] = [];
 
-    let defField = frame?.fields?.find((field: Field<any, [string]>) => {
+    let defField = frame?.fields?.find((field: Field<[string]>) => {
       return field.name === 'def';
     });
     if (defField != null) {
@@ -58,7 +66,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       });
     } else {
       // Include back-support for old `ops` format, which uses "name", not "defs". Used by nhaystack
-      let nameField = frame?.fields?.find((field: Field<any, [string]>) => {
+      let nameField = frame?.fields?.find((field: Field<[string]>) => {
         return field.name === 'name';
       });
       if (nameField != null) {
@@ -79,7 +87,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
     return availableQueryTypes;
   }
 
-  applyTemplateVariables(query: HaystackQuery, scopedVars: ScopedVars): Record<string, any> {
+  applyTemplateVariables(query: HaystackQuery, scopedVars: ScopedVars): HaystackQuery {
     return {
       ...query,
       eval: getTemplateSrv().replace(query.eval, scopedVars, 'csv'),
@@ -87,48 +95,6 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       hisReadFilter: getTemplateSrv().replace(query.hisReadFilter, scopedVars, 'csv'),
       read: getTemplateSrv().replace(query.read, scopedVars, 'csv'),
     };
-  }
-
-  // This is called when the user is selecting a variable value
-  async metricFindQuery(variableQuery: HaystackVariableQuery, options?: any) {
-    let request: HaystackQuery = variableQuery;
-    let observable = this.query({ targets: [request] } as DataQueryRequest<HaystackQuery>);
-    let response = await firstValueFrom(observable);
-
-    if (response === undefined || response.data === undefined) {
-      return [];
-    }
-
-    return response.data.reduce((acc: MetricFindValue[], frame: DataFrame) => {
-      // Default to the first field
-      let column = frame.fields[0];
-      if (variableQuery.column !== undefined && variableQuery.column !== '') {
-        // If a column was input, match the column name
-        column = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? column;
-      } else if (frame.fields.some((field: Field) => field.name === 'id')) {
-        // If there is an id column, use that
-        column = frame.fields.find((field: Field) => field.name === 'id') ?? column;
-      }
-
-      // Default to the selected column
-      let displayColumn = column;
-      if (variableQuery.displayColumn !== undefined && variableQuery.displayColumn !== '') {
-        // If a column was input, match the column name
-        displayColumn =
-          frame.fields.find((field: Field) => field.name === variableQuery.displayColumn) ?? displayColumn;
-      }
-
-      let variableValues = column.values.map((value, index) => {
-        let variableValue = variableValueFromCell(value, column.type);
-
-        let displayValue = displayColumn.values[index];
-        let variableText = variableTextFromCell(displayValue, displayColumn.type);
-
-        return { text: variableText, value: variableValue };
-      });
-
-      return acc.concat(variableValues);
-    }, []);
   }
 
   // Returns a DataQueryRequest that gets the available ops from the datasource
@@ -149,6 +115,65 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
     };
   }
 }
+
+export class HaystackVariableSupport extends CustomVariableSupport<DataSource, HaystackVariableQuery, HaystackQuery, HaystackDataSourceOptions> {
+  editor: ComponentType<QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions, HaystackVariableQuery>>;
+
+  // Requests data from the backend. This allows this class to reuse the DataSource.query method to get data.
+  onQuery: (request: DataQueryRequest<HaystackVariableQuery>) => Observable<DataQueryResponse>;
+
+  constructor(onQuery: (request: DataQueryRequest<HaystackVariableQuery>) => Observable<DataQueryResponse>) {
+    super();
+    this.editor = VariableQueryEditor;
+    this.onQuery = onQuery;
+  }
+
+  query(request: DataQueryRequest<HaystackVariableQuery>): Observable<DataQueryResponse> {
+    let variableQuery = request.targets[0];
+    variableQuery.refId = VARIABLE_REF_ID;
+    let observable = this.onQuery(request);
+    return observable.pipe(
+      map((response) => {
+        if (response === undefined || response.errors !== undefined || response.data === undefined) {
+          return response
+        }
+
+        let variableValues = response.data.reduce((acc: MetricFindValue[], frame: DataFrame) => {
+          // Default to the first field
+          let column = frame.fields[0];
+          if (variableQuery.column !== undefined && variableQuery.column !== '') {
+            // If a column was input, match the column name
+            column = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? column;
+          } else if (frame.fields.some((field: Field) => field.name === 'id')) {
+            // If there is an id column, use that
+            column = frame.fields.find((field: Field) => field.name === 'id') ?? column;
+          }
+
+          // Default to the selected column
+          let displayColumn = column;
+          if (variableQuery.displayColumn !== undefined && variableQuery.displayColumn !== '') {
+            // If a column was input, match the column name
+            displayColumn = frame.fields.find((field: Field) => {
+              return field.name === variableQuery.displayColumn
+            }) ?? displayColumn;
+          }
+
+          let variableValues = column.values.map((value, index) => {
+            let variableValue = variableValueFromCell(value, column.type);
+
+            let displayValue = displayColumn.values[index];
+            let variableText = variableTextFromCell(displayValue, displayColumn.type);
+
+            return { text: variableText, value: variableValue };
+          });
+          return acc.concat(variableValues);
+        }, []);
+        return { ...response, data: variableValues };
+      })
+    );
+  }
+}
+
 
 function variableValueFromCell(value: string, columnType: FieldType): string {
   switch (columnType) {

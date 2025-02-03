@@ -9,7 +9,7 @@ interface VariableQueryProps {
   onChange: (query: HaystackVariableQuery, definition: string) => void;
 }
 
-const refId = "variable";
+export const VARIABLE_REF_ID = "variable";
 
 export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, query: variableQuery }) => {
   let variableInputWidth = 30;
@@ -17,7 +17,7 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
 
   const saveQuery = () => {
     // refId must match but doesn't get set originally so set should set it on every change
-    setState({ ...query, refId: refId});
+    setState({ ...query, refId: VARIABLE_REF_ID});
 
     let type = query.type;
     let queryCmd = "";
@@ -71,7 +71,7 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
       <HaystackQueryTypeSelector
         datasource={null}
         type={query.type}
-        refId={query.refId ?? refId}
+        refId={query.refId ?? VARIABLE_REF_ID}
         onChange={onTypeChange}
       />
       <HaystackQueryInput

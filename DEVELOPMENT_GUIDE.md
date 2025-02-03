@@ -20,7 +20,7 @@ yarn dev
 1. Build the back-end, inject it into a docker image, and run it alongside a Haxall server:
 
 ```bash
-mage -v && docker-compose -f docker-compose_dev.yaml up
+mage -v && docker compose -f docker-compose_dev.yaml up
 ```
 
 ## Usage
