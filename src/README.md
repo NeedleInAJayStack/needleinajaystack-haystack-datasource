@@ -11,7 +11,7 @@ Some popular servers with Haystack APIs are:
 - [Siemens Desigo Optic](https://www.siemens.com/us/en/products/buildingtechnologies/automation/desigo-optic.html)
 - [Fin Framework](https://www.j2inn.com/finframework)
 - [Haxall](https://haxall.io/)
-- [WideSky Cloud](https://widesky.cloud/products/widesky-cloud/)
+- [WideSky](https://widesky.cloud/platform/)
 
 ## Usage
 
