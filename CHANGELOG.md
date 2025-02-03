@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.21
+- Documentation updates
+
 ## 0.0.20
 - Removes 'Run' button from query editor
 - Removes reliance on deprecated features
