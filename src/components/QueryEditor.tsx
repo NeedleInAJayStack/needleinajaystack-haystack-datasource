@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, {  } from 'react';
 import { Button, Form, Stack } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
@@ -8,29 +8,29 @@ import { HaystackQueryInput } from './HaystackQueryInput';
 
 type Props = QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions>;
 
-export class QueryEditor extends PureComponent<Props> {
-  onTypeChange(newType: string) {
-    this.props.onChange({ ...this.props.query, type: newType });
+export function QueryEditor({ datasource, query, onChange, onRunQuery }: Props) {
+  const onTypeChange = (newType: string) => {
+    onChange({ ...query, type: newType });
   };
-  onQueryChange(newQuery: string) {
-    if (this.props.query.type === "eval") {
-      this.props.onChange({ ...this.props.query, eval: newQuery });
-    } else if (this.props.query.type === "hisRead") {
-      this.props.onChange({ ...this.props.query, hisRead: newQuery });
-    } else if (this.props.query.type === "hisReadFilter") {
-      this.props.onChange({ ...this.props.query, hisReadFilter: newQuery });
-    } else if (this.props.query.type === "read") {
-      this.props.onChange({ ...this.props.query, read: newQuery });
+  const onQueryChange = (newQuery: string) => {
+    if (query.type === "eval") {
+      onChange({ ...query, eval: newQuery });
+    } else if (query.type === "hisRead") {
+      onChange({ ...query, hisRead: newQuery });
+    } else if (query.type === "hisReadFilter") {
+      onChange({ ...query, hisReadFilter: newQuery });
+    } else if (query.type === "read") {
+      onChange({ ...query, read: newQuery });
     }
   };
-  onSubmit(newQuery: Partial<HaystackQuery>) {
-    this.props.onChange({ ...this.props.query, ...newQuery });
-    this.props.onRunQuery();
+
+  function onSubmit(newQuery: Partial<HaystackQuery>) {
+    query = { ...query, ...newQuery };
+    onRunQuery();
   }
-  
-  render() {
-    return (
-      <Form onSubmit={(e) => this.onSubmit(e)}>
+
+  return (
+      <Form onSubmit={onSubmit}>
         {({ register, errors }) => {
           return (
             <Stack
@@ -38,20 +38,19 @@ export class QueryEditor extends PureComponent<Props> {
               alignItems="flex-start"
             >
               <HaystackQueryTypeSelector
-                datasource={this.props.datasource}
-                type={this.props.query.type}
-                refId={this.props.query.refId}
-                onChange={(e) => this.onTypeChange(e)}
+                datasource={datasource}
+                type={query.type}
+                refId={query.refId}
+                onChange={onTypeChange}
               />
               <HaystackQueryInput
-                query={this.props.query}
-                onChange={(e) => this.onQueryChange(e)}
+                query={query}
+                onChange={onQueryChange}
               />
               <Button type="submit" >Run</Button>
             </Stack>
           );
         }}
       </Form>
-    );
-  }
+  );
 }
