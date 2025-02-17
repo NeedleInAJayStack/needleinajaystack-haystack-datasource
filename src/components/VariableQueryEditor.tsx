@@ -22,13 +22,13 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
     let type = query.type;
     let queryCmd = "";
     if (query.type === "eval") {
-      queryCmd = query.eval
+      queryCmd = query.eval ?? "";
     } else if (query.type === "hisRead") {
-      queryCmd = query.hisRead
+      queryCmd = query.hisRead ?? "";
     } else if (query.type === "hisReadFilter") {
-      queryCmd = query.hisReadFilter
+      queryCmd = query.hisReadFilter ?? "";
     } else if (query.type === "read") {
-      queryCmd = query.read
+      queryCmd = query.read ?? "";
     }
     let column = "none";
     if (query.column !== undefined && query.column !== '') {

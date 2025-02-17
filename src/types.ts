@@ -2,11 +2,11 @@ import { DataSourceJsonData, SelectableValue } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
 export interface HaystackQuery extends DataQuery {
-  type: string; // Defines the type of query that should be executed
-  eval: string;
-  hisRead: string;
-  hisReadFilter: string;
-  read: string;
+  type?: string; // Defines the type of query that should be executed
+  eval?: string;
+  hisRead?: string;
+  hisReadFilter?: string;
+  read?: string;
 }
 
 // OpsQuery is a query that is used to get the available ops from the datasource.

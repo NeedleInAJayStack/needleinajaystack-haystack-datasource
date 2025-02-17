@@ -5,7 +5,7 @@ import { DataSource, queryTypes } from '../datasource';
 
 export interface HaystackQueryTypeSelectorProps {
   datasource: DataSource | null;
-  type: string;
+  type?: string;
   refId: string;
   onChange: (type: string) => void;
 }
@@ -16,7 +16,7 @@ export function HaystackQueryTypeSelector({ datasource, type, refId, onChange }:
   };
 
   const queryTypeDefault = queryTypes[0];
-  function queryTypeFromValue(value: string): QueryType | null {
+  function queryTypeFromValue(value?: string): QueryType | null {
     return queryTypes.find((queryType) => queryType.value === value) ?? null;
   }
 
