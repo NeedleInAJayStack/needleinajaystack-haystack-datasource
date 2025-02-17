@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.22
+- Correctly sets minimum Grafana version to v11.0.0
+- Fixes persistence issues with input queries
+- Restores support for variable 'definition' display strings
+
 ## 0.0.21
 - Documentation updates
 
