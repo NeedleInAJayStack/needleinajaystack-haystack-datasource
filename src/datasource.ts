@@ -17,7 +17,7 @@ import { HaystackQuery, OpsQuery, HaystackDataSourceOptions, HaystackVariableQue
 import { firstValueFrom, map, Observable } from 'rxjs';
 import { isRef, parseRef } from 'haystack';
 import { ComponentType } from 'react';
-import { VARIABLE_REF_ID, VariableQueryEditor } from 'components/VariableQueryEditor';
+import { VariableQueryEditor } from 'components/VariableQueryEditor';
 
 export const queryTypes: QueryType[] = [
   { label: 'Eval', value: 'eval', apiRequirements: ['eval'], description: 'Evaluate an Axon expression' },
@@ -130,7 +130,6 @@ export class HaystackVariableSupport extends CustomVariableSupport<DataSource, H
 
   query(request: DataQueryRequest<HaystackVariableQuery>): Observable<DataQueryResponse> {
     let variableQuery = request.targets[0];
-    variableQuery.refId = VARIABLE_REF_ID;
     let observable = this.onQuery(request);
     return observable.pipe(
       map((response) => {
