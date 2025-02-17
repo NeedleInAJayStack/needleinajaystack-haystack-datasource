@@ -20,7 +20,7 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
           <AutoSizeInput
             minWidth={minWidth}
             prefix={<Icon name="angle-right" />}
-            onChange={onQueryChange}
+            onBlur={onQueryChange}
             value={query.eval}
             placeholder={DEFAULT_QUERY.eval}
           />
@@ -32,7 +32,7 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
           <AutoSizeInput
             minWidth={minWidth}
             prefix={'@'}
-            onChange={onQueryChange}
+            onBlur={onQueryChange}
             value={query.hisRead}
             placeholder={DEFAULT_QUERY.hisRead}
           />
@@ -44,7 +44,7 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
           <AutoSizeInput
             minWidth={minWidth}
             prefix={<Icon name="filter" />}
-            onChange={onQueryChange}
+            onBlur={onQueryChange}
             value={query.hisReadFilter}
             placeholder={DEFAULT_QUERY.hisReadFilter}
           />
@@ -56,7 +56,7 @@ export function HaystackQueryInput({ query, onChange }: HaystackQueryInputProps)
           <AutoSizeInput
             minWidth={minWidth}
             prefix={<Icon name="filter" />}
-            onChange={onQueryChange}
+            onBlur={onQueryChange}
             value={query.read}
             placeholder={DEFAULT_QUERY.read}
           />
