@@ -1,19 +1,18 @@
-import React, { useState } from 'react';
-import { HaystackVariableQuery } from '../types';
+import React from 'react';
+import { HaystackDataSourceOptions, HaystackQuery, HaystackVariableQuery } from '../types';
 import { HaystackQueryTypeSelector } from './HaystackQueryTypeSelector';
 import { HaystackQueryInput } from './HaystackQueryInput';
-import { InlineField, Input } from '@grafana/ui';
+import { QueryEditorProps } from '@grafana/data';
+import { InlineField, Input, Stack } from '@grafana/ui';
+import { DataSource } from 'datasource';
 
-interface VariableQueryProps {
-  query: HaystackVariableQuery;
-  onChange: (query: HaystackVariableQuery, definition: string) => void;
-}
+type Props = QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions, HaystackVariableQuery>;
 
-export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, query: variableQuery }) => {
+export const VariableQueryEditor = ({ onChange, query }: Props) => {
   let variableInputWidth = 30;
-  const [query, setState] = useState(variableQuery);
 
-  const saveQuery = () => {
+  // Computes the query string and calls the onChange function. Should be used instead of onChange for all mutating functions.
+  const onChangeAndSave = (query: HaystackVariableQuery) => {
     let type = query.type;
     let queryCmd = "";
     if (query.type === "eval") {
@@ -34,35 +33,38 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
       displayColumn = `'${query.displayColumn}'`;
     }
     let displayString = `${type}: '${queryCmd}', Column: ${column}, Display: ${displayColumn}`
-    onChange(query, displayString);
+    onChange({ ...query, query: displayString });
   };
 
   const onTypeChange = (newType: string) => {
-    setState({ ...query, type: newType});
+    onChangeAndSave({ ...query, type: newType});
   };
 
   const onQueryChange = (newQuery: string) => {
     if (query.type === "eval") {
-      setState({ ...query, eval: newQuery });
+      onChangeAndSave({ ...query, eval: newQuery });
     } else if (query.type === "hisRead") {
-      setState({ ...query, hisRead: newQuery });
+      onChangeAndSave({ ...query, hisRead: newQuery });
     } else if (query.type === "hisReadFilter") {
-      setState({ ...query, hisReadFilter: newQuery });
+      onChangeAndSave({ ...query, hisReadFilter: newQuery });
     } else if (query.type === "read") {
-      setState({ ...query, read: newQuery });
+      onChangeAndSave({ ...query, read: newQuery });
     }
   };
 
   const onColumnChange = (event: React.FormEvent<HTMLInputElement>) => {
-    setState({...query, column: event.currentTarget.value,});
+    onChangeAndSave({...query, column: event.currentTarget.value,});
   };
 
   const onDisplayColumnChange = (event: React.FormEvent<HTMLInputElement>) => {
-    setState({...query, displayColumn: event.currentTarget.value,});
+    onChangeAndSave({...query, displayColumn: event.currentTarget.value,});
   };
 
   return (
-    <div onBlur={saveQuery}>
+    <Stack
+      direction="column"
+      alignItems="flex-start"
+    >
       <HaystackQueryTypeSelector
         datasource={null}
         type={query.type}
@@ -89,6 +91,6 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
           placeholder="Defaults to 'Column'"
         />
       </InlineField>
-    </div>
+    </Stack>
   );
 };

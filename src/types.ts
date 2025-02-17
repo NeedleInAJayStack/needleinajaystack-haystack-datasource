@@ -29,6 +29,7 @@ export interface QueryType extends SelectableValue<string> {
 }
 
 export interface HaystackVariableQuery extends HaystackQuery {
+  query: string; // Used to set 'definition' display string in the UI
   column: string;
   displayColumn: string;
   refId: string;
