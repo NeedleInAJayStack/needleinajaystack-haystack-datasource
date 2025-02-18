@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.23
+- Uses [Grafana GitHub plugin actions](https://github.com/grafana/plugin-actions)
+
 ## 0.0.22
 - Correctly sets minimum Grafana version to v11.0.0
 - Fixes persistence issues with input queries
