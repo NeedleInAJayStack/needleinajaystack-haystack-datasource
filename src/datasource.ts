@@ -35,7 +35,7 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
   constructor(instanceSettings: DataSourceInstanceSettings<HaystackDataSourceOptions>) {
     super(instanceSettings);
     this.variables = new HaystackVariableSupport((request) => {
-      return this.query(request)
+      return this.query(request);
     });
   }
 
@@ -116,7 +116,12 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
   }
 }
 
-export class HaystackVariableSupport extends CustomVariableSupport<DataSource, HaystackVariableQuery, HaystackQuery, HaystackDataSourceOptions> {
+export class HaystackVariableSupport extends CustomVariableSupport<
+  DataSource,
+  HaystackVariableQuery,
+  HaystackQuery,
+  HaystackDataSourceOptions
+> {
   editor: ComponentType<QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions, HaystackVariableQuery>>;
 
   // Requests data from the backend. This allows this class to reuse the DataSource.query method to get data.
@@ -136,7 +141,7 @@ export class HaystackVariableSupport extends CustomVariableSupport<DataSource, H
     return observable.pipe(
       map((response) => {
         if (response === undefined || response.errors !== undefined || response.data === undefined) {
-          return response
+          return response;
         }
 
         let variableValues = response.data.reduce((acc: MetricFindValue[], frame: DataFrame) => {
@@ -154,9 +159,10 @@ export class HaystackVariableSupport extends CustomVariableSupport<DataSource, H
           let displayColumn = column;
           if (variableQuery.displayColumn !== undefined && variableQuery.displayColumn !== '') {
             // If a column was input, match the column name
-            displayColumn = frame.fields.find((field: Field) => {
-              return field.name === variableQuery.displayColumn
-            }) ?? displayColumn;
+            displayColumn =
+              frame.fields.find((field: Field) => {
+                return field.name === variableQuery.displayColumn;
+              }) ?? displayColumn;
           }
 
           let variableValues = column.values.map((value, index) => {
@@ -174,7 +180,6 @@ export class HaystackVariableSupport extends CustomVariableSupport<DataSource, H
     );
   }
 }
-
 
 function variableValueFromCell(value: string, columnType: FieldType): string {
   switch (columnType) {
