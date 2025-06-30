@@ -130,6 +130,8 @@ export class HaystackVariableSupport extends CustomVariableSupport<DataSource, H
 
   query(request: DataQueryRequest<HaystackVariableQuery>): Observable<DataQueryResponse> {
     let variableQuery = request.targets[0];
+    // Setting the refId is required for Grafana to associate the response with the request.
+    variableQuery.refId = 'HaystackVariableQuery';
     let observable = this.onQuery(request);
     return observable.pipe(
       map((response) => {
