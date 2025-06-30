@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.24
+- Fixes issue with variables populating. See [issue #46](https://github.com/NeedleInAJayStack/needleinajaystack-haystack-datasource/issues/46) and [PR #47](https://github.com/NeedleInAJayStack/needleinajaystack-haystack-datasource/pull/47)
+
 ## 0.0.23
 - Uses [Grafana GitHub plugin actions](https://github.com/grafana/plugin-actions)
 
