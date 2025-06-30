@@ -4,20 +4,13 @@ import {
   DataQueryRequest,
   DataFrame,
   Field,
-  MetricFindValue,
   getDefaultTimeRange,
-  FieldType,
-  CustomVariableSupport,
-  DataQueryResponse,
-  QueryEditorProps,
 } from '@grafana/data';
 import { DataSourceWithBackend, getTemplateSrv } from '@grafana/runtime';
 
-import { HaystackQuery, OpsQuery, HaystackDataSourceOptions, HaystackVariableQuery, QueryType } from './types';
-import { firstValueFrom, map, Observable } from 'rxjs';
-import { isRef, parseRef } from 'haystack';
-import { ComponentType } from 'react';
-import { VariableQueryEditor } from 'components/VariableQueryEditor';
+import { HaystackQuery, OpsQuery, HaystackDataSourceOptions, QueryType } from './types';
+import { firstValueFrom } from 'rxjs';
+import { HaystackVariableSupport } from 'HaystackVariableSupport';
 
 export const queryTypes: QueryType[] = [
   { label: 'Eval', value: 'eval', apiRequirements: ['eval'], description: 'Evaluate an Axon expression' },
@@ -34,9 +27,7 @@ export const queryTypes: QueryType[] = [
 export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDataSourceOptions> {
   constructor(instanceSettings: DataSourceInstanceSettings<HaystackDataSourceOptions>) {
     super(instanceSettings);
-    this.variables = new HaystackVariableSupport((request) => {
-      return this.query(request);
-    });
+    this.variables = new HaystackVariableSupport(this);
   }
 
   // Queries the available ops from the datasource and returns the queryTypes that are supported.
@@ -114,90 +105,4 @@ export class DataSource extends DataSourceWithBackend<HaystackQuery, HaystackDat
       startTime: 0,
     };
   }
-}
-
-export class HaystackVariableSupport extends CustomVariableSupport<
-  DataSource,
-  HaystackVariableQuery,
-  HaystackQuery,
-  HaystackDataSourceOptions
-> {
-  editor: ComponentType<QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions, HaystackVariableQuery>>;
-
-  // Requests data from the backend. This allows this class to reuse the DataSource.query method to get data.
-  onQuery: (request: DataQueryRequest<HaystackVariableQuery>) => Observable<DataQueryResponse>;
-
-  constructor(onQuery: (request: DataQueryRequest<HaystackVariableQuery>) => Observable<DataQueryResponse>) {
-    super();
-    this.editor = VariableQueryEditor;
-    this.onQuery = onQuery;
-  }
-
-  query(request: DataQueryRequest<HaystackVariableQuery>): Observable<DataQueryResponse> {
-    let variableQuery = request.targets[0];
-    // Setting the refId is required for Grafana to associate the response with the request.
-    variableQuery.refId = 'HaystackVariableQuery';
-    let observable = this.onQuery(request);
-    return observable.pipe(
-      map((response) => {
-        if (response === undefined || response.errors !== undefined || response.data === undefined) {
-          return response;
-        }
-
-        let variableValues = response.data.reduce((acc: MetricFindValue[], frame: DataFrame) => {
-          // Default to the first field
-          let column = frame.fields[0];
-          if (variableQuery.column !== undefined && variableQuery.column !== '') {
-            // If a column was input, match the column name
-            column = frame.fields.find((field: Field) => field.name === variableQuery.column) ?? column;
-          } else if (frame.fields.some((field: Field) => field.name === 'id')) {
-            // If there is an id column, use that
-            column = frame.fields.find((field: Field) => field.name === 'id') ?? column;
-          }
-
-          // Default to the selected column
-          let displayColumn = column;
-          if (variableQuery.displayColumn !== undefined && variableQuery.displayColumn !== '') {
-            // If a column was input, match the column name
-            displayColumn =
-              frame.fields.find((field: Field) => {
-                return field.name === variableQuery.displayColumn;
-              }) ?? displayColumn;
-          }
-
-          let variableValues = column.values.map((value, index) => {
-            let variableValue = variableValueFromCell(value, column.type);
-
-            let displayValue = displayColumn.values[index];
-            let variableText = variableTextFromCell(displayValue, displayColumn.type);
-
-            return { text: variableText, value: variableValue };
-          });
-          return acc.concat(variableValues);
-        }, []);
-        return { ...response, data: variableValues };
-      })
-    );
-  }
-}
-
-function variableValueFromCell(value: string, columnType: FieldType): string {
-  switch (columnType) {
-    case FieldType.string:
-      if (isRef(value)) {
-        return parseRef(value).id;
-      }
-  }
-  return value;
-}
-
-function variableTextFromCell(value: string, columnType: FieldType): string {
-  switch (columnType) {
-    case FieldType.string:
-      if (isRef(value)) {
-        let ref = parseRef(value);
-        return ref.dis ?? ref.id;
-      }
-  }
-  return value;
 }

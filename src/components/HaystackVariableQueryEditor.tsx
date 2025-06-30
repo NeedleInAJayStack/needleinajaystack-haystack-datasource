@@ -6,9 +6,11 @@ import { QueryEditorProps } from '@grafana/data';
 import { InlineField, Input, Stack } from '@grafana/ui';
 import { DataSource } from 'datasource';
 
-type Props = QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions, HaystackVariableQuery>;
+export type Props = QueryEditorProps<DataSource, HaystackQuery, HaystackDataSourceOptions, HaystackVariableQuery>;
 
-export const VariableQueryEditor = ({ onChange, query }: Props) => {
+const refId = 'HaystackVariableQueryEditor-VariableQuery';
+
+export const HaystackVariableQueryEditor = ({ onChange, query }: Props) => {
   let variableInputWidth = 30;
 
   // Computes the query string and calls the onChange function. Should be used instead of onChange for all mutating functions.
@@ -42,22 +44,28 @@ export const VariableQueryEditor = ({ onChange, query }: Props) => {
 
   const onQueryChange = (newQuery: string) => {
     if (query.type === "eval") {
-      onChangeAndSave({ ...query, eval: newQuery });
+      onChangeAndSave({ ...query, refId: refId, eval: newQuery });
     } else if (query.type === "hisRead") {
-      onChangeAndSave({ ...query, hisRead: newQuery });
+      onChangeAndSave({ ...query, refId: refId, hisRead: newQuery });
     } else if (query.type === "hisReadFilter") {
-      onChangeAndSave({ ...query, hisReadFilter: newQuery });
+      onChangeAndSave({ ...query, refId: refId, hisReadFilter: newQuery });
     } else if (query.type === "read") {
-      onChangeAndSave({ ...query, read: newQuery });
+      onChangeAndSave({ ...query, refId: refId, read: newQuery });
     }
   };
 
   const onColumnChange = (event: React.FormEvent<HTMLInputElement>) => {
-    onChangeAndSave({...query, column: event.currentTarget.value,});
+    onChangeAndSave({...query, column: event.currentTarget.value });
   };
 
   const onDisplayColumnChange = (event: React.FormEvent<HTMLInputElement>) => {
-    onChangeAndSave({...query, displayColumn: event.currentTarget.value,});
+    onChangeAndSave({...query, displayColumn: event.currentTarget.value });
+  };
+
+  const handleBlur = () => {
+    if (query.query !== undefined && query.query !== "") {
+      onChange({ ...query, refId: refId });
+    }
   };
 
   return (
@@ -78,6 +86,7 @@ export const VariableQueryEditor = ({ onChange, query }: Props) => {
       <InlineField label="Column">
         <Input
           width={variableInputWidth}
+          onBlur={handleBlur}
           onChange={onColumnChange}
           value={query.column}
           placeholder="Defaults to 'id' or first column"
@@ -86,6 +95,7 @@ export const VariableQueryEditor = ({ onChange, query }: Props) => {
       <InlineField label="Display Column">
         <Input
           width={variableInputWidth}
+          onBlur={handleBlur}
           onChange={onDisplayColumnChange}
           value={query.displayColumn}
           placeholder="Defaults to 'Column'"
