@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	neturl "net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,36 +41,52 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	if jsonErr != nil {
 		return nil, jsonErr
 	}
-	url := options.Url
+	rawURL := options.Url
 	username := options.Username
 
 	// settings contains secure inputs in .DecryptedSecureJSONData in a string:string map
 	password := settings.DecryptedSecureJSONData["password"]
 
-	client := client.NewClient(url, username, password)
-	openErr := client.Open()
+	var insecureHost string
+	if options.SkipTlsVerify {
+		if parsedURL, err := neturl.Parse(rawURL); err == nil {
+			insecureHost = parsedURL.Host
+			registerInsecureHost(insecureHost)
+		}
+	}
+
+	haystackClient := client.NewClient(rawURL, username, password)
+	openErr := haystackClient.Open()
 	if openErr != nil {
+		if insecureHost != "" {
+			unregisterInsecureHost(insecureHost)
+		}
 		return nil, openErr
 	}
-	datasource := Datasource{client: client}
+	datasource := Datasource{client: haystackClient, insecureHost: insecureHost}
 	return &datasource, nil
 }
 
 // Datasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
 type Datasource struct {
-	client HaystackClient
+	client       HaystackClient
+	insecureHost string
 }
 
 type Options struct {
-	Url      string `json:"url"`
-	Username string `json:"username"`
+	Url           string `json:"url"`
+	Username      string `json:"username"`
+	SkipTlsVerify bool   `json:"skipTlsVerify"`
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
 // created. As soon as datasource settings change detected by SDK old datasource instance will
 // be disposed and a new one will be created using NewSampleDatasource factory function.
 func (datasource *Datasource) Dispose() {
+	if datasource.insecureHost != "" {
+		unregisterInsecureHost(datasource.insecureHost)
+	}
 	datasource.client.Close()
 }
 
