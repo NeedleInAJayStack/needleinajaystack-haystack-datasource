@@ -1,5 +1,5 @@
 import React, { ChangeEvent } from 'react';
-import { InlineField, Input, SecretInput } from '@grafana/ui';
+import { InlineField, InlineSwitch, Input, SecretInput } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { HaystackDataSourceOptions, HaystackSecureJsonData } from '../types';
 
@@ -31,6 +31,10 @@ export function ConfigEditor(props: Props) {
         password: event.target.value,
       },
     });
+  };
+
+  const onSkipTlsVerifyChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onOptionsChange({ ...options, jsonData: { ...options.jsonData, skipTlsVerify: event.target.checked } });
   };
 
   const onResetPassword = () => {
@@ -77,6 +81,9 @@ export function ConfigEditor(props: Props) {
           onReset={onResetPassword}
           onChange={onPasswordChange}
         />
+      </InlineField>
+      <InlineField label="Skip TLS Verify" labelWidth={18} tooltip="Skip TLS certificate verification. Use only for development or trusted networks.">
+        <InlineSwitch value={jsonData.skipTlsVerify || false} onChange={onSkipTlsVerifyChange} />
       </InlineField>
     </div>
   );

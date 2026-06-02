@@ -49,6 +49,7 @@ export const DEFAULT_QUERY: Partial<HaystackQuery> = {
 export interface HaystackDataSourceOptions extends DataSourceJsonData {
   url: string;
   username: string;
+  skipTlsVerify?: boolean;
 }
 
 /**
