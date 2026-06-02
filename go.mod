@@ -7,7 +7,7 @@ toolchain go1.22.11
 require github.com/grafana/grafana-plugin-sdk-go v0.263.0
 
 require (
-	github.com/NeedleInAJayStack/haystack v0.2.2
+	github.com/NeedleInAJayStack/haystack v0.2.4
 	github.com/google/go-cmp v0.6.0
 )
 

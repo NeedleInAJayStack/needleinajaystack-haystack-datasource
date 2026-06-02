@@ -2,8 +2,10 @@ package plugin
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -46,7 +48,11 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	// settings contains secure inputs in .DecryptedSecureJSONData in a string:string map
 	password := settings.DecryptedSecureJSONData["password"]
 
-	client := client.NewClient(url, username, password)
+	client := client.NewClientFromHTTP(url, username, password, &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: options.SkipTlsVerify},
+		},
+	})
 	openErr := client.Open()
 	if openErr != nil {
 		return nil, openErr
@@ -62,8 +68,9 @@ type Datasource struct {
 }
 
 type Options struct {
-	Url      string `json:"url"`
-	Username string `json:"username"`
+	Url           string `json:"url"`
+	Username      string `json:"username"`
+	SkipTlsVerify bool   `json:"skipTlsVerify"`
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
