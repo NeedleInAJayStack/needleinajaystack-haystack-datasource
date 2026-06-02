@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.25
+- Adds switch to disable TLS verification.
+
 ## 0.0.24
 - Fixes issue with variables populating. See [issue #46](https://github.com/NeedleInAJayStack/needleinajaystack-haystack-datasource/issues/46) and [PR #47](https://github.com/NeedleInAJayStack/needleinajaystack-haystack-datasource/pull/47)
 
