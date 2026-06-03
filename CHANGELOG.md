@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.27
+- Fix go version in release CI.
+
 ## 0.0.26
 - Bump dependencies to address CVEs.
 
