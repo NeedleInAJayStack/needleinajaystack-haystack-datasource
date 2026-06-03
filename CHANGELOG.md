@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.26
+- Bump dependencies to address CVEs.
+
 ## 0.0.25
 - Adds switch to disable TLS verification.
 
