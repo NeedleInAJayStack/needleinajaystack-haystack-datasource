@@ -1,0 +1,51 @@
+{
+  "uid": "haystack-example",
+  "title": "Haystack Example",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "tags": [],
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "refresh": "",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Time Series",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "needleinajaystack-haystack-datasource", "uid": "Haystack" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "needleinajaystack-haystack-datasource", "uid": "Haystack" },
+          "type": "eval",
+          "eval": "[{ts: now()-1hr, v0: 0}, {ts: now(), v0: 10}].toGrid"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Table",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "needleinajaystack-haystack-datasource", "uid": "Haystack" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "needleinajaystack-haystack-datasource", "uid": "Haystack" },
+          "type": "eval",
+          "eval": "[{name: \"a\", value: 75, temp}, {name: \"b\", value: 5, pressure}].toGrid"
+        }
+      ]
+    }
+  ],
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "needleinajaystack-haystack-datasource",
+      "name": "Haystack",
+      "version": "1.0.0"
+    }
+  ]
+}
