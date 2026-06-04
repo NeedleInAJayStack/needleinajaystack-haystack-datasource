@@ -20,16 +20,14 @@ yarn dev
 1. Build the back-end, inject it into a docker image, and run it alongside a Haxall server:
 
 ```bash
-mage -v && docker compose -f docker-compose_dev.yaml up
+mage -v && docker compose up
 ```
 
 ## Usage
 
-Create a new data source and select "Haystack". If no Docker configuration has been edited, the Haystack API is available at
-`http://haxall:8080/api/`, with the username `su` and password `su`. Click "Save and Test" and make sure that it is
-working.
+An example datasource and dashboard are created by the provisioning system.
 
-Create a new dashboard and panel, and use this axon query to test the connection:
+If you'd like to create a new dashboard and panel, you use this axon query to test the connection:
 
 ```
 [{ts: now()-1hr, v0: 0}, {ts: now(), v0: 10}].toGrid
