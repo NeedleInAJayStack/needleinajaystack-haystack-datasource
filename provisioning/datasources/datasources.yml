@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: 'Haystack'
+    type: 'needleinajaystack-haystack-datasource'
+    access: proxy
+    isDefault: true
+    orgId: 1
+    version: 1
+    editable: true
+    jsonData:
+      url: 'http://haxall:8080/api/'
+      username: 'su'
+    secureJsonData:
+      password: 'su'
