@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/NeedleInAJayStack/haystack"
@@ -205,37 +204,24 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 			return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
 		}
 
-		// Function to read a single point and send it to a channel.
-		readPoint := func(point haystack.Row, hisReadChannel chan haystack.Grid, wg *sync.WaitGroup) {
-			hisRead, err := datasource.hisRead(point, query.TimeRange)
-			if err != nil {
-				log.DefaultLogger.Error(err.Error())
-			}
-			hisReadChannel <- hisRead // hisRead is empty under error condition
-			wg.Done()
-		}
-
-		// Start a goroutine to collect all the grids into a slice.
-		hisReadChannel := make(chan haystack.Grid)
-		combinedChannel := make(chan []haystack.Grid)
-		go func() {
-			grids := []haystack.Grid{}
-			for grid := range hisReadChannel {
-				grids = append(grids, grid)
-			}
-			combinedChannel <- grids
-		}()
-
 		// Read all the points in parallel using goroutines.
-		var wg sync.WaitGroup
-		wg.Add(len(points))
+		hisReadChannel := make(chan haystack.Grid)
 		for _, point := range points {
-			go readPoint(point, hisReadChannel, &wg)
+			go func() {
+				hisRead, err := datasource.hisRead(point, query.TimeRange)
+				if err != nil {
+					log.DefaultLogger.Error(err.Error())
+				}
+				hisReadChannel <- hisRead // hisRead is empty under error condition
+			}()
 		}
-		wg.Wait()
-		close(hisReadChannel)
 
-		grids := <-combinedChannel
+		grids := []haystack.Grid{}
+		for _ = range len(points) {
+			grid := <-hisReadChannel
+			grids = append(grids, grid)
+		}
+
 		response := responseFromGrids(grids)
 		// Make the display name on the "val" fields the names of the points.
 		for _, frame := range response.Frames {
