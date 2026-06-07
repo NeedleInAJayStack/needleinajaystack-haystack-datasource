@@ -2,10 +2,8 @@ package plugin
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,6 +14,7 @@ import (
 	"github.com/NeedleInAJayStack/haystack/client"
 	"github.com/NeedleInAJayStack/haystack/io"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -48,11 +47,16 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	// settings contains secure inputs in .DecryptedSecureJSONData in a string:string map
 	password := settings.DecryptedSecureJSONData["password"]
 
-	client := client.NewClientFromHTTP(url, username, password, &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: options.SkipTlsVerify},
-		},
-	})
+	httpClientOptions, err := settings.HTTPClientOptions(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("http client options: %w", err)
+	}
+	httpClientOptions.TLS = &httpclient.TLSOptions{InsecureSkipVerify: options.SkipTlsVerify}
+	httpClient, err := httpclient.New(httpClientOptions)
+	if err != nil {
+		return nil, fmt.Errorf("new http client: %w", err)
+	}
+	client := client.NewClientFromHTTP(url, username, password, httpClient)
 	openErr := client.Open()
 	if openErr != nil {
 		return nil, openErr
