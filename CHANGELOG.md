@@ -1,7 +1,7 @@
 # Changelog
 
-## 0.0.27
-- Fix go version in release CI.
+## 0.0.28
+- Haystack HTTP client inherits Grafana proxy settings, request timeouts, and tracing.
 
 ## 0.0.26
 - Bump dependencies to address CVEs.
