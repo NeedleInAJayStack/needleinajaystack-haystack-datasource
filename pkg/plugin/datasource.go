@@ -2,20 +2,18 @@ package plugin
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/NeedleInAJayStack/haystack"
 	"github.com/NeedleInAJayStack/haystack/client"
 	"github.com/NeedleInAJayStack/haystack/io"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -38,9 +36,9 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 
 	// settings contains normal inputs in the .JSONData field in JSON byte form
 	var options Options
-	jsonErr := json.Unmarshal(settings.JSONData, &options)
-	if jsonErr != nil {
-		return nil, jsonErr
+	err := json.Unmarshal(settings.JSONData, &options)
+	if err != nil {
+		return nil, fmt.Errorf("datasource options: %w", err)
 	}
 	url := options.Url
 	username := options.Username
@@ -48,14 +46,19 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	// settings contains secure inputs in .DecryptedSecureJSONData in a string:string map
 	password := settings.DecryptedSecureJSONData["password"]
 
-	client := client.NewClientFromHTTP(url, username, password, &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: options.SkipTlsVerify},
-		},
-	})
-	openErr := client.Open()
-	if openErr != nil {
-		return nil, openErr
+	httpClientOptions, err := settings.HTTPClientOptions(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("http client options: %w", err)
+	}
+	httpClientOptions.TLS = &httpclient.TLSOptions{InsecureSkipVerify: options.SkipTlsVerify}
+	httpClient, err := httpclient.New(httpClientOptions)
+	if err != nil {
+		return nil, fmt.Errorf("new http client: %w", err)
+	}
+	client := client.NewClientFromHTTP(url, username, password, httpClient)
+	err = client.Open()
+	if err != nil {
+		return nil, fmt.Errorf("haystack client opening: %w", err)
 	}
 	datasource := Datasource{client: client}
 	return &datasource, nil
@@ -117,10 +120,10 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 	// Unmarshal the JSON into our queryModel.
 	var model QueryModel
 
-	jsonErr := json.Unmarshal(query.JSON, &model)
-	if jsonErr != nil {
-		log.DefaultLogger.Error(jsonErr.Error())
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal failure: %v", jsonErr.Error()))
+	err := json.Unmarshal(query.JSON, &model)
+	if err != nil {
+		log.DefaultLogger.Error(err.Error())
+		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal failure: %v", err.Error()))
 	}
 
 	variables := map[string]string{
@@ -201,37 +204,24 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 			return backend.ErrDataResponse(backend.StatusBadRequest, errMsg)
 		}
 
-		// Function to read a single point and send it to a channel.
-		readPoint := func(point haystack.Row, hisReadChannel chan haystack.Grid, wg *sync.WaitGroup) {
-			hisRead, err := datasource.hisRead(point, query.TimeRange)
-			if err != nil {
-				log.DefaultLogger.Error(err.Error())
-			}
-			hisReadChannel <- hisRead // hisRead is empty under error condition
-			wg.Done()
-		}
-
-		// Start a goroutine to collect all the grids into a slice.
-		hisReadChannel := make(chan haystack.Grid)
-		combinedChannel := make(chan []haystack.Grid)
-		go func() {
-			grids := []haystack.Grid{}
-			for grid := range hisReadChannel {
-				grids = append(grids, grid)
-			}
-			combinedChannel <- grids
-		}()
-
 		// Read all the points in parallel using goroutines.
-		var wg sync.WaitGroup
-		wg.Add(len(points))
+		hisReadChannel := make(chan haystack.Grid)
 		for _, point := range points {
-			go readPoint(point, hisReadChannel, &wg)
+			go func() {
+				hisRead, err := datasource.hisRead(point, query.TimeRange)
+				if err != nil {
+					log.DefaultLogger.Error(err.Error())
+				}
+				hisReadChannel <- hisRead // hisRead is empty under error condition
+			}()
 		}
-		wg.Wait()
-		close(hisReadChannel)
 
-		grids := <-combinedChannel
+		grids := []haystack.Grid{}
+		for _ = range len(points) {
+			grid := <-hisReadChannel
+			grids = append(grids, grid)
+		}
+
 		response := responseFromGrids(grids)
 		// Make the display name on the "val" fields the names of the points.
 		for _, frame := range response.Frames {
@@ -260,11 +250,7 @@ func (datasource *Datasource) query(ctx context.Context, pCtx backend.PluginCont
 func responseFromGrids(grids []haystack.Grid) backend.DataResponse {
 	frames := data.Frames{}
 	for _, grid := range grids {
-		frame, frameErr := dataFrameFromGrid(grid)
-		if frameErr != nil {
-			log.DefaultLogger.Error(frameErr.Error())
-			return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("Frame conversion failure: %v", frameErr.Error()))
-		}
+		frame := dataFrameFromGrid(grid)
 		frames = append(frames, frame)
 	}
 
@@ -333,13 +319,13 @@ func (datasource *Datasource) hisRead(point haystack.Row, timeRange backend.Time
 
 	// Must convert input date range to the point's timezone.
 	// See https://github.com/skyfoundry/haystack-java/blob/30380dbbe4b5d9be8eb3f400195b0cdcdcc67b95/src/main/java/org/projecthaystack/server/HServer.java#L328
-	start, startErr := haystack.NewDateTimeFromGo(timeRange.From).ToTz(tz.String())
-	if startErr != nil {
-		return haystack.EmptyGrid(), startErr
+	start, err := haystack.NewDateTimeFromGo(timeRange.From).ToTz(tz.String())
+	if err != nil {
+		return haystack.EmptyGrid(), fmt.Errorf("start time: %w", err)
 	}
-	end, endErr := haystack.NewDateTimeFromGo(timeRange.To).ToTz(tz.String())
-	if endErr != nil {
-		return haystack.EmptyGrid(), endErr
+	end, err := haystack.NewDateTimeFromGo(timeRange.To).ToTz(tz.String())
+	if err != nil {
+		return haystack.EmptyGrid(), fmt.Errorf("end time: %w", err)
 	}
 
 	return datasource.withRetry(
@@ -415,7 +401,7 @@ func (datasource *Datasource) withRetry(
 }
 
 // dataFrameFromGrid converts a haystack grid to a Grafana data frame
-func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
+func dataFrameFromGrid(grid haystack.Grid) *data.Frame {
 	fields := []*data.Field{}
 
 	for _, col := range grid.Cols() {
@@ -527,7 +513,7 @@ func dataFrameFromGrid(grid haystack.Grid) (*data.Frame, error) {
 	frame := data.NewFrame("response", fields...)
 	frameName := disFromMeta(grid.Meta(), "")
 	frame.Name = frameName
-	return frame, nil
+	return frame
 }
 
 // disFromMeta returns the display name using metadata. It falls back to the provided string if no other name can be found
